@@ -6,13 +6,14 @@ export default async function BarangPage() {
   const profile = await requireAuth();
   const supabase = await createClient();
 
-  const [productsRes, categoriesRes, suppliersRes] = await Promise.all([
+  const [productsRes, categoriesRes, suppliersRes, unitsRes] = await Promise.all([
     supabase
       .from("products")
       .select("*, categories(nama), suppliers(nama)")
       .order("nama_barang"),
     supabase.from("categories").select("*").order("nama"),
     supabase.from("suppliers").select("*").order("nama"),
+    supabase.from("units").select("*").order("nama"),
   ]);
 
   const canEdit = profile.role === "owner" || profile.role === "admin";
@@ -27,6 +28,7 @@ export default async function BarangPage() {
         products={productsRes.data ?? []}
         categories={categoriesRes.data ?? []}
         suppliers={suppliersRes.data ?? []}
+        units={unitsRes.data ?? []}
         canEdit={canEdit}
       />
     </div>

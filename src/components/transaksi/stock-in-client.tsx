@@ -44,6 +44,8 @@ export function StockInClient({ products, suppliers, history }: StockInClientPro
 
   const total = form.qty * form.harga_beli;
 
+  const selectedProduct = products.find((p) => p.id === form.product_id);
+
   const handleProductChange = (productId: string) => {
     const product = products.find((p) => p.id === productId);
     setForm({
@@ -83,11 +85,25 @@ export function StockInClient({ products, suppliers, history }: StockInClientPro
               <Label>Barang</Label>
               <Select value={form.product_id} onValueChange={handleProductChange} required>
                 <SelectTrigger><SelectValue placeholder="Pilih barang" /></SelectTrigger>
-                <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.nama_barang}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {products.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nama_barang} (Stok: {p.stok} {p.satuan})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
+            {selectedProduct && (
+              <p className="text-sm text-muted-foreground">
+                Stok saat ini: {selectedProduct.stok} {selectedProduct.satuan}
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Qty</Label><Input type="number" min={0.001} step="0.001" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} required /></div>
+              <div>
+                <Label>Qty ({selectedProduct?.satuan ?? "satuan"})</Label>
+                <Input type="number" min={0.001} step="0.001" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} required />
+              </div>
               <div><Label>Harga Beli</Label><Input type="number" min={0} value={form.harga_beli} onChange={(e) => setForm({ ...form, harga_beli: Number(e.target.value) })} required /></div>
             </div>
             <div className="rounded-lg bg-muted p-3">

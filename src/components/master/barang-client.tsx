@@ -31,7 +31,7 @@ import { Plus, Pencil, Trash2, QrCode, ScanLine, Search } from "lucide-react";
 import { createProduct, updateProduct, deleteProduct, generateAndUploadQR } from "@/actions/products";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
-import type { Product, Category, Supplier } from "@/types";
+import type { Product, Category, Supplier, Unit } from "@/types";
 import { BarcodeScanner } from "@/components/scanner/barcode-scanner";
 import Image from "next/image";
 
@@ -39,6 +39,7 @@ interface BarangClientProps {
   products: Product[];
   categories: Category[];
   suppliers: Supplier[];
+  units: Unit[];
   canEdit: boolean;
 }
 
@@ -53,7 +54,7 @@ const emptyForm = {
   minimum_stok: 0,
 };
 
-export function BarangClient({ products, categories, suppliers, canEdit }: BarangClientProps) {
+export function BarangClient({ products, categories, suppliers, units, canEdit }: BarangClientProps) {
   const [open, setOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
@@ -172,7 +173,28 @@ export function BarangClient({ products, categories, suppliers, canEdit }: Baran
                       <SelectContent>{suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div><Label>Satuan</Label><Input value={form.satuan} onChange={(e) => setForm({ ...form, satuan: e.target.value })} required /></div>
+                  <div>
+                    <Label>Satuan</Label>
+                    {units.length > 0 ? (
+                      <Select value={form.satuan} onValueChange={(v) => setForm({ ...form, satuan: v })} required>
+                        <SelectTrigger><SelectValue placeholder="Pilih satuan" /></SelectTrigger>
+                        <SelectContent>
+                          {units.map((u) => (
+                            <SelectItem key={u.id} value={u.singkatan}>
+                              {u.nama} ({u.singkatan})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={form.satuan}
+                        onChange={(e) => setForm({ ...form, satuan: e.target.value })}
+                        placeholder="pcs, Kg, Liter..."
+                        required
+                      />
+                    )}
+                  </div>
                   <div><Label>Minimum Stok</Label><Input type="number" min={0} step="0.001" value={form.minimum_stok} onChange={(e) => setForm({ ...form, minimum_stok: Number(e.target.value) })} /></div>
                   <div><Label>Harga Beli</Label><Input type="number" min={0} value={form.harga_beli} onChange={(e) => setForm({ ...form, harga_beli: Number(e.target.value) })} /></div>
                   <div><Label>Harga Jual</Label><Input type="number" min={0} value={form.harga_jual} onChange={(e) => setForm({ ...form, harga_jual: Number(e.target.value) })} /></div>

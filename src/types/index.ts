@@ -15,6 +15,13 @@ export interface Category {
   created_at: string;
 }
 
+export interface Unit {
+  id: string;
+  nama: string;
+  singkatan: string;
+  created_at: string;
+}
+
 export interface Supplier {
   id: string;
   nama: string;

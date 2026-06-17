@@ -21,6 +21,10 @@ import {
   Coffee,
   ChevronDown,
   AlertTriangle,
+  Ruler,
+  Database,
+  ArrowLeftRight,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRoleNavItems } from "@/lib/auth/roles";
@@ -44,6 +48,10 @@ const iconMap: Record<string, React.ElementType> = {
   Users,
   User,
   ClipboardList,
+  Ruler,
+  Database,
+  ArrowLeftRight,
+  Settings,
 };
 
 interface AppSidebarProps {
@@ -74,8 +82,12 @@ export function AppSidebar({ role, lowStockCount = 0 }: AppSidebarProps) {
         <ul className="space-y-1">
           {navItems.map((item) => {
             if (item.children) {
-              const isOpen = openGroups[item.title] ?? item.children.some((c) => pathname === c.href || pathname.startsWith(c.href + "/"));
-              const Icon = iconMap[item.children[0]?.title === "Barang" ? "Package" : "FileText"] || FileText;
+              const isOpen =
+                openGroups[item.title] ??
+                item.children.some(
+                  (c) => pathname === c.href || pathname.startsWith(c.href + "/")
+                );
+              const GroupIcon = iconMap[item.icon] || Database;
 
               return (
                 <li key={item.title}>
@@ -84,31 +96,38 @@ export function AppSidebar({ role, lowStockCount = 0 }: AppSidebarProps) {
                     className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent"
                   >
                     <span className="flex items-center gap-2">
-                      <Icon className="h-4 w-4" />
+                      <GroupIcon className="h-4 w-4" />
                       {item.title}
                     </span>
-                    <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                    <ChevronDown
+                      className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
+                    />
                   </button>
                   {isOpen && (
                     <ul className="ml-4 mt-1 space-y-1 border-l pl-3">
-                      {item.children.map((child) => (
-                        <li key={child.href}>
-                          <Link
-                            href={child.href}
-                            className={cn(
-                              "flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent",
-                              pathname === child.href && "bg-sidebar-accent font-medium text-sidebar-primary"
-                            )}
-                          >
-                            {child.title}
-                            {child.href === "/master/barang" && lowStockCount > 0 && (
-                              <Badge variant="destructive" className="ml-auto text-xs">
-                                {lowStockCount}
-                              </Badge>
-                            )}
-                          </Link>
-                        </li>
-                      ))}
+                      {item.children.map((child) => {
+                        const ChildIcon = iconMap[child.icon] || Package;
+                        return (
+                          <li key={child.href}>
+                            <Link
+                              href={child.href}
+                              className={cn(
+                                "flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent",
+                                pathname === child.href &&
+                                  "bg-sidebar-accent font-medium text-sidebar-primary"
+                              )}
+                            >
+                              <ChildIcon className="h-4 w-4 shrink-0" />
+                              {child.title}
+                              {child.href === "/master/barang" && lowStockCount > 0 && (
+                                <Badge variant="destructive" className="ml-auto text-xs">
+                                  {lowStockCount}
+                                </Badge>
+                              )}
+                            </Link>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </li>
@@ -116,7 +135,7 @@ export function AppSidebar({ role, lowStockCount = 0 }: AppSidebarProps) {
             }
 
             const isActive = pathname === item.href;
-            const Icon = LayoutDashboard;
+            const Icon = iconMap[item.icon] || LayoutDashboard;
 
             return (
               <li key={item.href}>

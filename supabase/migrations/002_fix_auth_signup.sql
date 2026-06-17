@@ -12,13 +12,25 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 -- Recreate trigger function dengan search_path yang benar (wajib di Supabase)
+-- User pertama otomatis jadi owner
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  user_count INTEGER;
+  assigned_role user_role;
 BEGIN
+  SELECT COUNT(*) INTO user_count FROM public.profiles;
+
+  IF user_count = 0 THEN
+    assigned_role := 'owner';
+  ELSE
+    assigned_role := 'kasir';
+  END IF;
+
   INSERT INTO public.profiles (id, nama, email, role)
   VALUES (
     NEW.id,
@@ -28,7 +40,7 @@ BEGIN
       split_part(COALESCE(NEW.email, 'user'), '@', 1)
     ),
     COALESCE(NEW.email, ''),
-    'kasir'
+    assigned_role
   );
   RETURN NEW;
 EXCEPTION

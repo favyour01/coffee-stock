@@ -41,61 +41,82 @@ export function canAccessRoute(role: UserRole, path: string): boolean {
   return false;
 }
 
-export function getRoleNavItems(role: UserRole) {
-  const allItems = [
+export interface NavChild {
+  title: string;
+  href: string;
+  icon: string;
+  roles: UserRole[];
+}
+
+export interface NavItem {
+  title: string;
+  href?: string;
+  icon: string;
+  roles: UserRole[];
+  children?: NavChild[];
+}
+
+export function getRoleNavItems(role: UserRole): NavItem[] {
+  const allItems: NavItem[] = [
     {
       title: "Dashboard",
       href: "/",
       icon: "LayoutDashboard",
-      roles: ["owner", "admin", "kasir"] as UserRole[],
+      roles: ["owner", "admin", "kasir"],
     },
     {
       title: "Master Data",
-      roles: ["owner", "admin"] as UserRole[],
+      icon: "Database",
+      roles: ["owner", "admin"],
       children: [
-        { title: "Barang", href: "/master/barang", roles: ["owner", "admin", "kasir"] as UserRole[] },
-        { title: "Kategori", href: "/master/kategori", roles: ["owner", "admin"] as UserRole[] },
-        { title: "Supplier", href: "/master/supplier", roles: ["owner", "admin"] as UserRole[] },
+        { title: "Barang", href: "/master/barang", icon: "Package", roles: ["owner", "admin", "kasir"] },
+        { title: "Satuan", href: "/master/satuan", icon: "Ruler", roles: ["owner", "admin"] },
+        { title: "Kategori", href: "/master/kategori", icon: "Tags", roles: ["owner", "admin"] },
+        { title: "Supplier", href: "/master/supplier", icon: "Truck", roles: ["owner", "admin"] },
       ],
     },
     {
       title: "Transaksi",
-      roles: ["owner", "admin", "kasir"] as UserRole[],
+      icon: "ArrowLeftRight",
+      roles: ["owner", "admin", "kasir"],
       children: [
-        { title: "Barang Masuk", href: "/transaksi/masuk", roles: ["owner", "admin"] as UserRole[] },
-        { title: "Barang Keluar", href: "/transaksi/keluar", roles: ["owner", "admin", "kasir"] as UserRole[] },
-        { title: "Produksi", href: "/transaksi/produksi", roles: ["owner", "admin"] as UserRole[] },
-        { title: "Penjualan", href: "/transaksi/penjualan", roles: ["owner", "admin", "kasir"] as UserRole[] },
-        { title: "Riwayat", href: "/transaksi/riwayat", roles: ["owner", "admin"] as UserRole[] },
+        { title: "Barang Masuk", href: "/transaksi/masuk", icon: "ArrowDownToLine", roles: ["owner", "admin"] },
+        { title: "Barang Keluar", href: "/transaksi/keluar", icon: "ArrowUpFromLine", roles: ["owner", "admin", "kasir"] },
+        { title: "Produksi", href: "/transaksi/produksi", icon: "ChefHat", roles: ["owner", "admin"] },
+        { title: "Penjualan", href: "/transaksi/penjualan", icon: "ShoppingCart", roles: ["owner", "admin", "kasir"] },
+        { title: "Riwayat", href: "/transaksi/riwayat", icon: "History", roles: ["owner", "admin"] },
       ],
     },
     {
       title: "Analisis",
-      roles: ["owner", "admin"] as UserRole[],
+      icon: "BarChart3",
+      roles: ["owner", "admin"],
       children: [
-        { title: "Penggunaan Barang", href: "/analisis/penggunaan", roles: ["owner", "admin"] as UserRole[] },
-        { title: "Forecast Stok", href: "/analisis/forecast", roles: ["owner", "admin"] as UserRole[] },
-        { title: "Supplier", href: "/analisis/supplier", roles: ["owner", "admin"] as UserRole[] },
+        { title: "Penggunaan Barang", href: "/analisis/penggunaan", icon: "BarChart3", roles: ["owner", "admin"] },
+        { title: "Forecast Stok", href: "/analisis/forecast", icon: "TrendingUp", roles: ["owner", "admin"] },
+        { title: "Supplier", href: "/analisis/supplier", icon: "Truck", roles: ["owner", "admin"] },
       ],
     },
     {
       title: "Laporan",
-      roles: ["owner", "admin"] as UserRole[],
+      icon: "FileText",
+      roles: ["owner", "admin"],
       children: [
-        { title: "Barang Masuk", href: "/laporan/masuk", roles: ["owner", "admin"] as UserRole[] },
-        { title: "Barang Keluar", href: "/laporan/keluar", roles: ["owner", "admin"] as UserRole[] },
-        { title: "Stok", href: "/laporan/stok", roles: ["owner", "admin"] as UserRole[] },
-        { title: "Supplier", href: "/laporan/supplier", roles: ["owner", "admin"] as UserRole[] },
-        { title: "Penggunaan", href: "/laporan/penggunaan", roles: ["owner", "admin"] as UserRole[] },
+        { title: "Barang Masuk", href: "/laporan/masuk", icon: "ArrowDownToLine", roles: ["owner", "admin"] },
+        { title: "Barang Keluar", href: "/laporan/keluar", icon: "ArrowUpFromLine", roles: ["owner", "admin"] },
+        { title: "Stok", href: "/laporan/stok", icon: "Package", roles: ["owner", "admin"] },
+        { title: "Supplier", href: "/laporan/supplier", icon: "Truck", roles: ["owner", "admin"] },
+        { title: "Penggunaan", href: "/laporan/penggunaan", icon: "ClipboardList", roles: ["owner", "admin"] },
       ],
     },
     {
       title: "Pengaturan",
-      roles: ["owner", "admin", "kasir"] as UserRole[],
+      icon: "Settings",
+      roles: ["owner", "admin", "kasir"],
       children: [
-        { title: "User", href: "/pengaturan/user", roles: ["owner"] as UserRole[] },
-        { title: "Profil", href: "/pengaturan/profil", roles: ["owner", "admin", "kasir"] as UserRole[] },
-        { title: "Audit Log", href: "/pengaturan/audit", roles: ["owner"] as UserRole[] },
+        { title: "User", href: "/pengaturan/user", icon: "Users", roles: ["owner"] },
+        { title: "Profil", href: "/pengaturan/profil", icon: "User", roles: ["owner", "admin", "kasir"] },
+        { title: "Audit Log", href: "/pengaturan/audit", icon: "ClipboardList", roles: ["owner"] },
       ],
     },
   ];
