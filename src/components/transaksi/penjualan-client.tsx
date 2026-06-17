@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -11,15 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FormStack } from "@/components/ui/field";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { createSale } from "@/actions/recipes";
 import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -54,15 +47,25 @@ export function PenjualanClient({
     }
   };
 
+  const historyColumns = useMemo<DataTableColumn<Sale>[]>(
+    () => [
+      { id: "tanggal", header: "Tanggal", sortable: true, sortValue: (h) => h.tanggal, cell: (h) => formatDate(h.tanggal) },
+      { id: "menu", header: "Menu", sortable: true, sortValue: (h) => h.recipes?.nama_menu ?? "", cell: (h) => h.recipes?.nama_menu },
+      { id: "qty", header: "Qty", sortable: true, sortValue: (h) => h.qty, cell: (h) => h.qty },
+    ],
+    []
+  );
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader><CardTitle>Form Penjualan (Kasir)</CardTitle></CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div><Label>Tanggal</Label><Input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} required /></div>
-            <div>
-              <Label>Menu</Label>
+          <FormStack onSubmit={handleSubmit}>
+            <Field label="Tanggal">
+              <Input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} required />
+            </Field>
+            <Field label="Menu">
               <Select value={form.recipe_id} onValueChange={(v) => setForm({ ...form, recipe_id: v })} required>
                 <SelectTrigger><SelectValue placeholder="Pilih menu" /></SelectTrigger>
                 <SelectContent>
@@ -73,10 +76,10 @@ export function PenjualanClient({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </Field>
             {selectedRecipe && (
-              <div className="rounded-lg bg-muted p-3 text-sm">
-                <p className="font-medium mb-1">Bahan yang akan berkurang:</p>
+              <div className="rounded-lg bg-muted p-4 text-sm">
+                <p className="mb-2 font-medium">Bahan yang akan berkurang:</p>
                 {selectedRecipe.recipe_items?.map((item) => (
                   <p key={item.id} className="text-muted-foreground">
                     {item.products?.nama_barang}: {Number(item.qty) * form.qty} {item.products?.satuan}
@@ -84,39 +87,33 @@ export function PenjualanClient({
                 ))}
               </div>
             )}
-            <div><Label>Jumlah</Label><Input type="number" min={1} value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} required /></div>
+            <Field label="Jumlah">
+              <Input type="number" min={1} value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} required />
+            </Field>
             {selectedRecipe && (
-              <div className="rounded-lg bg-primary/10 p-3">
-                <p className="text-sm">Total</p>
+              <div className="rounded-lg bg-primary/10 p-4">
+                <p className="text-sm text-muted-foreground">Total</p>
                 <p className="text-xl font-bold">{formatCurrency(selectedRecipe.harga_jual * form.qty)}</p>
               </div>
             )}
             <Button type="submit" disabled={loading} className="w-full">{loading ? "Memproses..." : "Catat Penjualan"}</Button>
-          </form>
+          </FormStack>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader><CardTitle>Riwayat Penjualan</CardTitle></CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Menu</TableHead>
-                <TableHead>Qty</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {history.slice(0, 10).map((h) => (
-                <TableRow key={h.id}>
-                  <TableCell>{formatDate(h.tanggal)}</TableCell>
-                  <TableCell>{h.recipes?.nama_menu}</TableCell>
-                  <TableCell>{h.qty}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            data={history}
+            columns={historyColumns}
+            getRowKey={(h) => h.id}
+            searchPlaceholder="Cari menu..."
+            searchFilter={(h, q) => (h.recipes?.nama_menu ?? "").toLowerCase().includes(q)}
+            emptyMessage="Belum ada riwayat penjualan"
+            defaultPageSize={5}
+            pageSizeOptions={[5, 10, 20]}
+          />
         </CardContent>
       </Card>
     </div>

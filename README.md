@@ -35,6 +35,7 @@ cp .env.local.example .env.local
    - `001_initial_schema.sql`
    - `002_fix_auth_signup.sql`
    - `003_units_and_owner.sql`
+   - `004_reset_data.sql`
 3. (Opsional) Jalankan `supabase/seed.sql` untuk data contoh
 4. Aktifkan **Google OAuth** di Authentication > Providers
 5. Tambahkan redirect URL: `http://localhost:3000/auth/callback`

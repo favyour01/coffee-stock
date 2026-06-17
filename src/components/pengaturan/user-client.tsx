@@ -1,14 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useMemo, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -17,12 +9,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { updateUserRole, toggleUserActive } from "@/actions/users";
 import { toast } from "sonner";
 import { ROLES } from "@/lib/auth/roles";
 import type { Profile, UserRole } from "@/types";
 
-// Simple switch component if not from shadcn
 function ActiveSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -39,6 +31,19 @@ function ActiveSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
 
 export function UserManagementClient({ users, currentUserId }: { users: Profile[]; currentUserId: string }) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  const tableData = useMemo(() => {
+    return users.filter((u) => {
+      const matchRole = filterRole === "all" || u.role === filterRole;
+      const matchStatus =
+        filterStatus === "all" ||
+        (filterStatus === "aktif" && u.is_active) ||
+        (filterStatus === "nonaktif" && !u.is_active);
+      return matchRole && matchStatus;
+    });
+  }, [users, filterRole, filterStatus]);
 
   const handleRoleChange = async (userId: string, role: UserRole) => {
     setLoading(userId);
@@ -56,58 +61,80 @@ export function UserManagementClient({ users, currentUserId }: { users: Profile[
     else toast.success(isActive ? "User diaktifkan" : "User dinonaktifkan");
   };
 
+  const columns = useMemo<DataTableColumn<Profile>[]>(
+    () => [
+      { id: "nama", header: "Nama", sortable: true, sortValue: (u) => u.nama, cell: (u) => <span className="font-medium">{u.nama}</span> },
+      { id: "email", header: "Email", sortable: true, sortValue: (u) => u.email, cell: (u) => u.email },
+      {
+        id: "role",
+        header: "Role",
+        sortable: true,
+        sortValue: (u) => u.role,
+        cell: (u) =>
+          u.id === currentUserId ? (
+            <Badge>{ROLES[u.role]}</Badge>
+          ) : (
+            <Select value={u.role} onValueChange={(v) => handleRoleChange(u.id, v as UserRole)} disabled={loading === u.id}>
+              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="owner">Owner</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="kasir">Kasir</SelectItem>
+              </SelectContent>
+            </Select>
+          ),
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: (u) => (
+          <Badge variant={u.is_active ? "secondary" : "destructive"}>
+            {u.is_active ? "Aktif" : "Nonaktif"}
+          </Badge>
+        ),
+      },
+      {
+        id: "aktif",
+        header: "Aktif",
+        cell: (u) =>
+          u.id !== currentUserId ? (
+            <ActiveSwitch checked={u.is_active} onChange={(v) => handleToggleActive(u.id, v)} />
+          ) : null,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentUserId, loading]
+  );
+
   return (
-    <div className="rounded-md border overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nama</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Aktif</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.nama}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>
-                {user.id === currentUserId ? (
-                  <Badge>{ROLES[user.role]}</Badge>
-                ) : (
-                  <Select
-                    value={user.role}
-                    onValueChange={(v) => handleRoleChange(user.id, v as UserRole)}
-                    disabled={loading === user.id}
-                  >
-                    <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="owner">Owner</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="kasir">Kasir</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              </TableCell>
-              <TableCell>
-                <Badge variant={user.is_active ? "secondary" : "destructive"}>
-                  {user.is_active ? "Aktif" : "Nonaktif"}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {user.id !== currentUserId && (
-                  <ActiveSwitch
-                    checked={user.is_active}
-                    onChange={(v) => handleToggleActive(user.id, v)}
-                  />
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <DataTable
+      data={tableData}
+      columns={columns}
+      getRowKey={(u) => u.id}
+      searchPlaceholder="Cari nama atau email..."
+      searchFilter={(u, q) => u.nama.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)}
+      emptyMessage="Belum ada user"
+      filters={
+        <>
+          <Select value={filterRole} onValueChange={setFilterRole}>
+            <SelectTrigger className="w-[130px]"><SelectValue placeholder="Role" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Role</SelectItem>
+              <SelectItem value="owner">Owner</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="kasir">Kasir</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[130px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="aktif">Aktif</SelectItem>
+              <SelectItem value="nonaktif">Nonaktif</SelectItem>
+            </SelectContent>
+          </Select>
+        </>
+      }
+    />
   );
 }

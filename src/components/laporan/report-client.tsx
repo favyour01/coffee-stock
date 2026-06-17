@@ -1,17 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Field } from "@/components/ui/field";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileSpreadsheet, FileText } from "lucide-react";
 import { exportToExcel } from "@/lib/export/excel";
@@ -43,6 +36,21 @@ export function ReportClient({
 
   const period = `${formatDate(dateFrom)} — ${formatDate(dateTo)}`;
 
+  const tableColumns = useMemo<DataTableColumn<ReportRow>[]>(
+    () =>
+      columns.map((col) => ({
+        id: col.key,
+        header: col.label,
+        sortable: true,
+        sortValue: (row) => row[col.key] ?? "",
+        cell: (row) =>
+          typeof row[col.key] === "number" && col.key.includes("harga")
+            ? formatCurrency(row[col.key] as number)
+            : row[col.key],
+      })),
+    [columns]
+  );
+
   const handleExportExcel = () => {
     exportToExcel(data, `laporan-${title.toLowerCase().replace(/\s/g, "-")}`, title);
   };
@@ -58,16 +66,14 @@ export function ReportClient({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-4">
-        <div>
-          <Label>Dari</Label>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end gap-5">
+        <Field label="Dari" className="min-w-[180px]">
           <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-        </div>
-        <div>
-          <Label>Sampai</Label>
+        </Field>
+        <Field label="Sampai" className="min-w-[180px]">
           <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-        </div>
+        </Field>
         <Button variant="outline" onClick={handleExportExcel}>
           <FileSpreadsheet className="mr-2 h-4 w-4" />Export Excel
         </Button>
@@ -79,37 +85,13 @@ export function ReportClient({
       <Card>
         <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {columns.map((col) => (
-                    <TableHead key={col.key}>{col.label}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((row, idx) => (
-                  <TableRow key={idx}>
-                    {columns.map((col) => (
-                      <TableCell key={col.key}>
-                        {typeof row[col.key] === "number" && col.key.includes("harga")
-                          ? formatCurrency(row[col.key] as number)
-                          : row[col.key]}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-                {data.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="text-center text-muted-foreground">
-                      Tidak ada data
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTable
+            data={data}
+            columns={tableColumns}
+            getRowKey={(row) => columns.map((c) => String(row[c.key] ?? "")).join("-") || JSON.stringify(row)}
+            searchPlaceholder="Cari data laporan..."
+            emptyMessage="Tidak ada data"
+          />
         </CardContent>
       </Card>
     </div>

@@ -1,16 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Field, FormStack } from "@/components/ui/field";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { createCategory, updateCategory, deleteCategory } from "@/actions/categories";
 import { toast } from "sonner";
@@ -30,17 +23,43 @@ export function KategoriClient({ categories }: { categories: Category[] }) {
   const [nama, setNama] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const columns = useMemo<DataTableColumn<Category>[]>(
+    () => [
+      {
+        id: "nama",
+        header: "Nama Kategori",
+        sortable: true,
+        sortValue: (c) => c.nama,
+        cell: (c) => c.nama,
+      },
+      {
+        id: "aksi",
+        header: "Aksi",
+        headerClassName: "w-24",
+        cell: (c) => (
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => handleEdit(c)}>
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const result = editing
-      ? await updateCategory(editing.id, nama)
-      : await createCategory(nama);
+    const result = editing ? await updateCategory(editing.id, nama) : await createCategory(nama);
     setLoading(false);
 
-    if (result.error) {
-      toast.error(result.error);
-    } else {
+    if (result.error) toast.error(result.error);
+    else {
       toast.success(editing ? "Kategori diperbarui" : "Kategori ditambahkan");
       setOpen(false);
       setNama("");
@@ -62,7 +81,7 @@ export function KategoriClient({ categories }: { categories: Category[] }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditing(null); setNama(""); } }}>
           <DialogTrigger asChild>
@@ -72,53 +91,26 @@ export function KategoriClient({ categories }: { categories: Category[] }) {
             <DialogHeader>
               <DialogTitle>{editing ? "Edit" : "Tambah"} Kategori</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label>Nama Kategori</Label>
-                <Input value={nama} onChange={(e) => setNama(e.target.value)} required />
-              </div>
+            <FormStack onSubmit={handleSubmit}>
+              <Field label="Nama Kategori">
+                <Input value={nama} onChange={(e) => setNama(e.target.value)} placeholder="Contoh: Biji Kopi" required />
+              </Field>
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Menyimpan..." : "Simpan"}
               </Button>
-            </form>
+            </FormStack>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nama Kategori</TableHead>
-              <TableHead className="w-24">Aksi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories.map((cat) => (
-              <TableRow key={cat.id}>
-                <TableCell>{cat.nama}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(cat)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(cat.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {categories.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={2} className="text-center text-muted-foreground">
-                  Belum ada kategori
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable
+        data={categories}
+        columns={columns}
+        getRowKey={(c) => c.id}
+        searchPlaceholder="Cari kategori..."
+        searchFilter={(c, q) => c.nama.toLowerCase().includes(q)}
+        emptyMessage="Belum ada kategori"
+      />
     </div>
   );
 }

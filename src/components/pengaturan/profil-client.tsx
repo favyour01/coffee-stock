@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FormStack } from "@/components/ui/field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { updateProfile } from "@/actions/users";
@@ -30,23 +30,20 @@ export function ProfilClient({ profile }: { profile: Profile }) {
         <CardTitle>Profil Saya</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Email</Label>
+        <FormStack onSubmit={handleSubmit}>
+          <Field label="Email">
             <Input value={profile.email} disabled />
-          </div>
-          <div>
-            <Label>Role</Label>
-            <div className="mt-1"><Badge>{ROLES[profile.role]}</Badge></div>
-          </div>
-          <div>
-            <Label>Nama</Label>
+          </Field>
+          <Field label="Role">
+            <Badge className="w-fit">{ROLES[profile.role]}</Badge>
+          </Field>
+          <Field label="Nama">
             <Input value={nama} onChange={(e) => setNama(e.target.value)} required />
-          </div>
-          <Button type="submit" disabled={loading}>
+          </Field>
+          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
             {loading ? "Menyimpan..." : "Simpan Perubahan"}
           </Button>
-        </form>
+        </FormStack>
       </CardContent>
     </Card>
   );

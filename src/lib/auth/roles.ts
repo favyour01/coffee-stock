@@ -115,6 +115,7 @@ export function getRoleNavItems(role: UserRole): NavItem[] {
       roles: ["owner", "admin", "kasir"],
       children: [
         { title: "User", href: "/pengaturan/user", icon: "Users", roles: ["owner"] },
+        { title: "Kelola Data", href: "/pengaturan/data", icon: "Database", roles: ["owner"] },
         { title: "Profil", href: "/pengaturan/profil", icon: "User", roles: ["owner", "admin", "kasir"] },
         { title: "Audit Log", href: "/pengaturan/audit", icon: "ClipboardList", roles: ["owner"] },
       ],

@@ -13,7 +13,7 @@ export default async function StockInPage() {
       .from("stock_in")
       .select("*, products(nama_barang), suppliers(nama)")
       .order("created_at", { ascending: false })
-      .limit(20),
+      .limit(200),
   ]);
 
   return (

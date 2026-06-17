@@ -19,6 +19,7 @@ import {
   getLowStockProducts,
 } from "@/lib/queries/dashboard";
 import { requireAuth } from "@/lib/auth/session";
+import { PageHeader } from "@/components/layout/page-header";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import Link from "next/link";
 
@@ -34,22 +35,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Ringkasan inventaris kedai kopi</p>
-      </div>
-
-      {profile.role === "kasir" && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Akses Terbatas (Kasir)</AlertTitle>
-          <AlertDescription>
-            Role Kasir hanya bisa Barang Keluar & Penjualan. Untuk akses penuh (Barang Masuk,
-            Master Data, Laporan), minta Owner ubah role Anda di Pengaturan → User, atau jalankan:{" "}
-            <code className="text-xs">UPDATE profiles SET role = &apos;owner&apos; WHERE email = &apos;email-anda&apos;;</code>
-          </AlertDescription>
-        </Alert>
-      )}
+      <PageHeader title="Dashboard" description="Ringkasan inventaris kedai kopi" />
 
       <QuickActions role={profile.role} />
 

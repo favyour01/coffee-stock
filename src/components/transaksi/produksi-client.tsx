@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FormStack } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -104,11 +104,15 @@ export function ProduksiClient({
             <DialogHeader>
               <DialogTitle>{editing ? "Edit" : "Tambah"} Resep Produk</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div><Label>Nama Menu</Label><Input value={namaMenu} onChange={(e) => setNamaMenu(e.target.value)} placeholder="Es Kopi Susu" required /></div>
-              <div><Label>Harga Jual</Label><Input type="number" min={0} value={hargaJual} onChange={(e) => setHargaJual(Number(e.target.value))} /></div>
-              <div className="space-y-2">
-                <Label>Bahan-bahan</Label>
+            <FormStack onSubmit={handleSubmit}>
+              <Field label="Nama Menu">
+                <Input value={namaMenu} onChange={(e) => setNamaMenu(e.target.value)} placeholder="Es Kopi Susu" required />
+              </Field>
+              <Field label="Harga Jual">
+                <Input type="number" min={0} value={hargaJual} onChange={(e) => setHargaJual(Number(e.target.value))} />
+              </Field>
+              <Field label="Bahan-bahan">
+                <div className="space-y-3">
                 {items.map((item, idx) => (
                   <div key={idx} className="flex gap-2">
                     <Select value={item.product_id} onValueChange={(v) => {
@@ -119,7 +123,7 @@ export function ProduksiClient({
                       <SelectTrigger className="flex-1"><SelectValue placeholder="Pilih bahan" /></SelectTrigger>
                       <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.nama_barang}</SelectItem>)}</SelectContent>
                     </Select>
-                    <Input type="number" min={0.001} step="0.001" className="w-24" value={item.qty} onChange={(e) => {
+                    <Input type="number" min={0.001} step="0.001" className="w-28" value={item.qty} onChange={(e) => {
                       const newItems = [...items];
                       newItems[idx].qty = Number(e.target.value);
                       setItems(newItems);
@@ -130,9 +134,10 @@ export function ProduksiClient({
                 <Button type="button" variant="outline" size="sm" onClick={() => setItems([...items, { product_id: "", qty: 1 }])}>
                   <Plus className="mr-1 h-3 w-3" />Tambah Bahan
                 </Button>
-              </div>
+                </div>
+              </Field>
               <Button type="submit" disabled={loading} className="w-full">{loading ? "Menyimpan..." : "Simpan"}</Button>
-            </form>
+            </FormStack>
           </DialogContent>
         </Dialog>
       </div>

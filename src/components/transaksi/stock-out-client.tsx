@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -12,15 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FormStack } from "@/components/ui/field";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { createStockOut } from "@/actions/stock";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -56,15 +49,26 @@ export function StockOutClient({
     }
   };
 
+  const historyColumns = useMemo<DataTableColumn<StockOut>[]>(
+    () => [
+      { id: "tanggal", header: "Tanggal", sortable: true, sortValue: (h) => h.tanggal, cell: (h) => formatDate(h.tanggal) },
+      { id: "barang", header: "Barang", sortable: true, sortValue: (h) => h.products?.nama_barang ?? "", cell: (h) => h.products?.nama_barang },
+      { id: "qty", header: "Qty", sortable: true, sortValue: (h) => Number(h.qty), cell: (h) => h.qty },
+      { id: "keterangan", header: "Keterangan", sortable: true, sortValue: (h) => h.keterangan ?? "", cell: (h) => h.keterangan ?? "-" },
+    ],
+    []
+  );
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader><CardTitle>Form Barang Keluar</CardTitle></CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div><Label>Tanggal</Label><Input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} required /></div>
-            <div>
-              <Label>Barang</Label>
+          <FormStack onSubmit={handleSubmit}>
+            <Field label="Tanggal">
+              <Input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} required />
+            </Field>
+            <Field label="Barang">
               <Select value={form.product_id} onValueChange={(v) => setForm({ ...form, product_id: v })} required>
                 <SelectTrigger><SelectValue placeholder="Pilih barang" /></SelectTrigger>
                 <SelectContent>
@@ -75,42 +79,39 @@ export function StockOutClient({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </Field>
             {selectedProduct && (
-              <p className="text-sm text-muted-foreground">
-                Stok tersedia: {selectedProduct.stok} {selectedProduct.satuan}
+              <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                Stok tersedia: <span className="font-medium text-foreground">{selectedProduct.stok} {selectedProduct.satuan}</span>
               </p>
             )}
-            <div><Label>Qty</Label><Input type="number" min={0.001} step="0.001" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} required /></div>
-            <div><Label>Keterangan</Label><Textarea value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} placeholder="Contoh: Pemakaian harian" /></div>
+            <Field label={`Qty (${selectedProduct?.satuan ?? "satuan"})`}>
+              <Input type="number" min={0.001} step="0.001" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} required />
+            </Field>
+            <Field label="Keterangan" hint="Opsional — contoh: pemakaian harian">
+              <Textarea value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} placeholder="Contoh: Pemakaian harian" />
+            </Field>
             <Button type="submit" disabled={loading} className="w-full">{loading ? "Menyimpan..." : "Simpan"}</Button>
-          </form>
+          </FormStack>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader><CardTitle>Riwayat Terbaru</CardTitle></CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Barang</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Keterangan</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {history.slice(0, 10).map((h) => (
-                <TableRow key={h.id}>
-                  <TableCell>{formatDate(h.tanggal)}</TableCell>
-                  <TableCell>{h.products?.nama_barang}</TableCell>
-                  <TableCell>{h.qty}</TableCell>
-                  <TableCell>{h.keterangan ?? "-"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            data={history}
+            columns={historyColumns}
+            getRowKey={(h) => h.id}
+            searchPlaceholder="Cari barang atau keterangan..."
+            searchFilter={(h, q) =>
+              (h.products?.nama_barang ?? "").toLowerCase().includes(q) ||
+              (h.keterangan ?? "").toLowerCase().includes(q)
+            }
+            emptyMessage="Belum ada riwayat barang keluar"
+            defaultPageSize={5}
+            pageSizeOptions={[5, 10, 20]}
+          />
         </CardContent>
       </Card>
     </div>

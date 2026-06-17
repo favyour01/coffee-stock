@@ -12,7 +12,7 @@ export default async function StockOutPage() {
       .from("stock_out")
       .select("*, products(nama_barang)")
       .order("created_at", { ascending: false })
-      .limit(20),
+      .limit(200),
   ]);
 
   return (

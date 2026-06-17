@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { Field } from "@/components/ui/field";
 import { formatDate } from "@/lib/utils";
 import type { TransactionHistory } from "@/types";
 import {
@@ -31,6 +32,7 @@ export function RiwayatClient({ transactions }: { transactions: TransactionHisto
   const [filter, setFilter] = useState("bulanan");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [filterType, setFilterType] = useState("all");
 
   const getDateRange = () => {
     const now = new Date();
@@ -54,9 +56,14 @@ export function RiwayatClient({ transactions }: { transactions: TransactionHisto
   };
 
   const { start, end } = getDateRange();
-  const filtered = transactions.filter((t) =>
-    isWithinInterval(parseISO(t.tanggal), { start, end })
-  );
+
+  const tableData = useMemo(() => {
+    return transactions.filter((t) => {
+      const inRange = isWithinInterval(parseISO(t.tanggal), { start, end });
+      const matchType = filterType === "all" || t.type === filterType;
+      return inRange && matchType;
+    });
+  }, [transactions, start, end, filterType]);
 
   const typeLabel = (type: string) => {
     switch (type) {
@@ -67,8 +74,19 @@ export function RiwayatClient({ transactions }: { transactions: TransactionHisto
     }
   };
 
+  const columns = useMemo<DataTableColumn<TransactionHistory>[]>(
+    () => [
+      { id: "tanggal", header: "Tanggal", sortable: true, sortValue: (t) => t.tanggal, cell: (t) => formatDate(t.tanggal) },
+      { id: "tipe", header: "Tipe", sortable: true, sortValue: (t) => t.type, cell: (t) => typeLabel(t.type) },
+      { id: "deskripsi", header: "Deskripsi", sortable: true, sortValue: (t) => t.description, cell: (t) => t.description },
+      { id: "qty", header: "Qty", sortable: true, sortValue: (t) => t.qty, cell: (t) => t.qty },
+      { id: "user", header: "User", sortable: true, sortValue: (t) => t.user_name, cell: (t) => t.user_name },
+    ],
+    []
+  );
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Tabs value={filter} onValueChange={setFilter}>
         <TabsList>
           <TabsTrigger value="harian">Harian</TabsTrigger>
@@ -80,43 +98,38 @@ export function RiwayatClient({ transactions }: { transactions: TransactionHisto
       </Tabs>
 
       {filter === "custom" && (
-        <div className="flex gap-2">
-          <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-          <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        <div className="flex flex-wrap gap-4">
+          <Field label="Dari" className="min-w-[180px]">
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          </Field>
+          <Field label="Sampai" className="min-w-[180px]">
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          </Field>
         </div>
       )}
 
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tanggal</TableHead>
-              <TableHead>Tipe</TableHead>
-              <TableHead>Deskripsi</TableHead>
-              <TableHead>Qty</TableHead>
-              <TableHead>User</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((t) => (
-              <TableRow key={`${t.type}-${t.id}`}>
-                <TableCell>{formatDate(t.tanggal)}</TableCell>
-                <TableCell>{typeLabel(t.type)}</TableCell>
-                <TableCell>{t.description}</TableCell>
-                <TableCell>{t.qty}</TableCell>
-                <TableCell>{t.user_name}</TableCell>
-              </TableRow>
-            ))}
-            {filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  Tidak ada transaksi pada periode ini
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable
+        data={tableData}
+        columns={columns}
+        getRowKey={(t) => `${t.type}-${t.id}`}
+        searchPlaceholder="Cari deskripsi atau user..."
+        searchFilter={(t, q) =>
+          t.description.toLowerCase().includes(q) ||
+          t.user_name.toLowerCase().includes(q)
+        }
+        emptyMessage="Tidak ada transaksi pada periode ini"
+        filters={
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-[150px]"><SelectValue placeholder="Tipe" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Tipe</SelectItem>
+              <SelectItem value="stock_in">Barang Masuk</SelectItem>
+              <SelectItem value="stock_out">Barang Keluar</SelectItem>
+              <SelectItem value="sale">Penjualan</SelectItem>
+            </SelectContent>
+          </Select>
+        }
+      />
     </div>
   );
 }

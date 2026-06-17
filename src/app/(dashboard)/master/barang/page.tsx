@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/auth/session";
+import { PageHeader } from "@/components/layout/page-header";
 import { BarangClient } from "@/components/master/barang-client";
 
 export default async function BarangPage() {
@@ -20,10 +21,7 @@ export default async function BarangPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Barang</h1>
-        <p className="text-muted-foreground">Kelola data barang dan stok</p>
-      </div>
+      <PageHeader title="Barang" description="Kelola data barang dan stok" />
       <BarangClient
         products={productsRes.data ?? []}
         categories={categoriesRes.data ?? []}

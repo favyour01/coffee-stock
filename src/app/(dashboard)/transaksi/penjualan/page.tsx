@@ -15,7 +15,7 @@ export default async function PenjualanPage() {
       .from("sales")
       .select("*, recipes(nama_menu)")
       .order("created_at", { ascending: false })
-      .limit(20),
+      .limit(200),
   ]);
 
   return (
