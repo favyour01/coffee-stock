@@ -12,12 +12,17 @@ interface FieldProps {
 
 export function Field({ label, htmlFor, className, hint, children }: FieldProps) {
   return (
-    <div className={cn("flex flex-col gap-2.5", className)}>
-      <Label htmlFor={htmlFor} className="text-sm font-medium text-foreground/90">
+    <div className={cn("flex flex-col", className)}>
+      <Label
+        htmlFor={htmlFor}
+        className="mb-2.5 block text-sm font-medium leading-snug text-foreground/90"
+      >
         {label}
       </Label>
-      {children}
-      {hint ? <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p> : null}
+      <div className="space-y-2">{children}</div>
+      {hint ? (
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -28,7 +33,7 @@ export function FormStack({
   ...props
 }: React.ComponentProps<"form">) {
   return (
-    <form className={cn("flex flex-col gap-5", className)} {...props}>
+    <form className={cn("flex flex-col gap-6", className)} {...props}>
       {children}
     </form>
   );
@@ -41,5 +46,24 @@ export function FormGrid({
   className?: string;
   children: React.ReactNode;
 }) {
-  return <div className={cn("grid gap-5 sm:grid-cols-2", className)}>{children}</div>;
+  return (
+    <div className={cn("grid gap-x-6 gap-y-6 sm:grid-cols-2", className)}>
+      {children}
+    </div>
+  );
+}
+
+/** Form khusus di dalam Dialog/Modal — padding & spacing lebih lega */
+export function DialogForm({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"form">) {
+  return (
+    <div className="px-6 py-6">
+      <FormStack className={className} {...props}>
+        {children}
+      </FormStack>
+    </div>
+  );
 }

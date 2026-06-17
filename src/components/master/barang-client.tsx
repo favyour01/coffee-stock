@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Field, FormGrid, FormStack } from "@/components/ui/field";
+import { Field, FormGrid, DialogForm } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Plus, Pencil, Trash2, QrCode, ScanLine } from "lucide-react";
 import { createProduct, updateProduct, deleteProduct, generateAndUploadQR } from "@/actions/products";
@@ -232,11 +232,12 @@ export function BarangClient({ products, categories, suppliers, units, canEdit }
                 Tambah Barang
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden p-0 sm:max-w-xl">
               <DialogHeader>
                 <DialogTitle>{editing ? "Edit" : "Tambah"} Barang</DialogTitle>
               </DialogHeader>
-              <FormStack onSubmit={handleSubmit}>
+              <div className="overflow-y-auto">
+              <DialogForm onSubmit={handleSubmit}>
                 <FormGrid>
                   <Field label="Kode Barang">
                     <Input value={form.kode_barang} onChange={(e) => setForm({ ...form, kode_barang: e.target.value })} required />
@@ -285,7 +286,8 @@ export function BarangClient({ products, categories, suppliers, units, canEdit }
                 <Button type="submit" disabled={loading} className="w-full">
                   {loading ? "Menyimpan..." : "Simpan"}
                 </Button>
-              </FormStack>
+              </DialogForm>
+              </div>
             </DialogContent>
           </Dialog>
         )}
@@ -326,8 +328,9 @@ export function BarangClient({ products, categories, suppliers, units, canEdit }
       />
 
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
-        <DialogContent>
+        <DialogContent className="p-0 sm:max-w-md">
           <DialogHeader><DialogTitle>QR Code - {selectedProduct?.nama_barang}</DialogTitle></DialogHeader>
+          <div className="px-6 pb-6">
           {selectedProduct?.qr_code_url && (
             <div className="flex flex-col items-center gap-4">
               <Image src={selectedProduct.qr_code_url} alt="QR Code" width={256} height={256} />
@@ -339,13 +342,15 @@ export function BarangClient({ products, categories, suppliers, units, canEdit }
               </Button>
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={scanOpen} onOpenChange={setScanOpen}>
-        <DialogContent>
+        <DialogContent className="p-0 sm:max-w-md">
           <DialogHeader><DialogTitle>Scan Barcode</DialogTitle></DialogHeader>
-          <BarcodeScanner
+          <div className="px-6 pb-6">
+            <BarcodeScanner
             onScan={(code) => {
               const found = products.find((p) => p.kode_barang === code);
               if (found) {
@@ -356,6 +361,7 @@ export function BarangClient({ products, categories, suppliers, units, canEdit }
               }
             }}
           />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

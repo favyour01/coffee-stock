@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FormGrid, FormStack } from "@/components/ui/field";
+import { Field, FormGrid, DialogForm } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { createSupplier, updateSupplier, deleteSupplier } from "@/actions/suppliers";
@@ -81,11 +81,11 @@ export function SupplierClient({ suppliers }: { suppliers: Supplier[] }) {
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Tambah Supplier</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="p-0 sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>{editing ? "Edit" : "Tambah"} Supplier</DialogTitle>
             </DialogHeader>
-            <FormStack onSubmit={handleSubmit}>
+            <DialogForm onSubmit={handleSubmit}>
               <FormGrid>
                 <Field label="Nama"><Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} required /></Field>
                 <Field label="Telepon"><Input value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} /></Field>
@@ -94,7 +94,7 @@ export function SupplierClient({ suppliers }: { suppliers: Supplier[] }) {
               </FormGrid>
               <Field label="Alamat"><Textarea value={form.alamat} onChange={(e) => setForm({ ...form, alamat: e.target.value })} /></Field>
               <Button type="submit" disabled={loading} className="w-full">{loading ? "Menyimpan..." : "Simpan"}</Button>
-            </FormStack>
+            </DialogForm>
           </DialogContent>
         </Dialog>
       </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Field, FormStack } from "@/components/ui/field";
+import { Field, DialogForm } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -100,11 +100,12 @@ export function ProduksiClient({
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Tambah Resep</Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto max-w-lg">
+          <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden p-0 sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>{editing ? "Edit" : "Tambah"} Resep Produk</DialogTitle>
             </DialogHeader>
-            <FormStack onSubmit={handleSubmit}>
+            <div className="overflow-y-auto">
+            <DialogForm onSubmit={handleSubmit}>
               <Field label="Nama Menu">
                 <Input value={namaMenu} onChange={(e) => setNamaMenu(e.target.value)} placeholder="Es Kopi Susu" required />
               </Field>
@@ -137,7 +138,8 @@ export function ProduksiClient({
                 </div>
               </Field>
               <Button type="submit" disabled={loading} className="w-full">{loading ? "Menyimpan..." : "Simpan"}</Button>
-            </FormStack>
+            </DialogForm>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

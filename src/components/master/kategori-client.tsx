@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FormStack } from "@/components/ui/field";
+import { Field, DialogForm } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { createCategory, updateCategory, deleteCategory } from "@/actions/categories";
@@ -87,18 +87,18 @@ export function KategoriClient({ categories }: { categories: Category[] }) {
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Tambah Kategori</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="p-0 sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editing ? "Edit" : "Tambah"} Kategori</DialogTitle>
             </DialogHeader>
-            <FormStack onSubmit={handleSubmit}>
+            <DialogForm onSubmit={handleSubmit}>
               <Field label="Nama Kategori">
                 <Input value={nama} onChange={(e) => setNama(e.target.value)} placeholder="Contoh: Biji Kopi" required />
               </Field>
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Menyimpan..." : "Simpan"}
               </Button>
-            </FormStack>
+            </DialogForm>
           </DialogContent>
         </Dialog>
       </div>

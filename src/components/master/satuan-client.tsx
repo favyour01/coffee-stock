@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FormGrid, FormStack } from "@/components/ui/field";
+import { Field, FormGrid, DialogForm } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { createUnit, updateUnit, deleteUnit } from "@/actions/units";
@@ -77,17 +77,17 @@ export function SatuanClient({ units }: { units: Unit[] }) {
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Tambah Satuan</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="p-0 sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editing ? "Edit" : "Tambah"} Satuan</DialogTitle>
             </DialogHeader>
-            <FormStack onSubmit={handleSubmit}>
+            <DialogForm onSubmit={handleSubmit}>
               <FormGrid>
                 <Field label="Nama Satuan"><Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="Contoh: Kilogram" required /></Field>
                 <Field label="Singkatan"><Input value={form.singkatan} onChange={(e) => setForm({ ...form, singkatan: e.target.value })} placeholder="Contoh: Kg" required /></Field>
               </FormGrid>
               <Button type="submit" disabled={loading} className="w-full">{loading ? "Menyimpan..." : "Simpan"}</Button>
-            </FormStack>
+            </DialogForm>
           </DialogContent>
         </Dialog>
       </div>
