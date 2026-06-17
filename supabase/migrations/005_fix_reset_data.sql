@@ -1,5 +1,5 @@
--- Reset semua data bisnis (kecuali user/profiles)
--- Hanya bisa dipanggil oleh owner via RPC
+-- Fix: Supabase memblokir DELETE tanpa WHERE clause
+-- Jalankan di SQL Editor jika reset data error "DELETE REQUIRES a WHERE CLAUSE"
 
 CREATE OR REPLACE FUNCTION public.reset_all_business_data()
 RETURNS void
@@ -12,6 +12,7 @@ BEGIN
     RAISE EXCEPTION 'Hanya owner yang dapat menghapus semua data';
   END IF;
 
+  -- Urutan: child dulu, parent belakangan (FK)
   DELETE FROM sales WHERE true;
   DELETE FROM recipe_items WHERE true;
   DELETE FROM recipes WHERE true;
