@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/auth/session";
 import { StockInClient } from "@/components/transaksi/stock-in-client";
 
 export default async function StockInPage() {
-  await requireRole(["owner", "admin"]);
+  await requireRole(["owner", "admin", "stok"]);
   const supabase = await createClient();
 
   const [productsRes, suppliersRes, historyRes] = await Promise.all([

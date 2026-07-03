@@ -79,6 +79,7 @@ export function UserManagementClient({ users, currentUserId }: { users: Profile[
               <SelectContent>
                 <SelectItem value="owner">Owner</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="stok">Stok</SelectItem>
                 <SelectItem value="kasir">Kasir</SelectItem>
               </SelectContent>
             </Select>
@@ -122,6 +123,7 @@ export function UserManagementClient({ users, currentUserId }: { users: Profile[
               <SelectItem value="all">Semua Role</SelectItem>
               <SelectItem value="owner">Owner</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="stok">Stok</SelectItem>
               <SelectItem value="kasir">Kasir</SelectItem>
             </SelectContent>
           </Select>

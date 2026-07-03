@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { requireAuth } from "@/lib/auth/session";
+import { requireRole } from "@/lib/auth/session";
 import { StockOutClient } from "@/components/transaksi/stock-out-client";
 
 export default async function StockOutPage() {
-  await requireAuth();
+  await requireRole(["owner", "admin", "stok"]);
   const supabase = await createClient();
 
   const [productsRes, historyRes] = await Promise.all([

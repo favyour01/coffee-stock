@@ -57,14 +57,14 @@ const actions: QuickAction[] = [
     description: "Tambah stok dari supplier",
     href: "/transaksi/masuk",
     icon: ArrowDownToLine,
-    roles: ["owner", "admin"],
+    roles: ["owner", "admin", "stok"],
   },
   {
     title: "Barang Keluar",
     description: "Catat pemakaian / keluar",
     href: "/transaksi/keluar",
     icon: ArrowUpFromLine,
-    roles: ["owner", "admin", "kasir"],
+    roles: ["owner", "admin", "stok"],
   },
   {
     title: "Produksi",
