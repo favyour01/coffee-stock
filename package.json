@@ -16,7 +16,6 @@
   "dependencies": {
     "elysia": "^1.3.0",
     "@elysiajs/cors": "^1.3.0",
-    "@elysiajs/cookie": "^1.3.0",
     "@elysiajs/jwt": "^1.3.0",
     "@elysiajs/static": "^1.3.0",
     "mysql2": "^3.14.1",
@@ -35,8 +34,8 @@
     "recharts": "^2.15.3",
     "html5-qrcode": "^2.3.8",
     "qrcode": "^1.5.4",
-    "jspdf": "^2.5.2",
-    "jspdf-autotable": "^3.8.5",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
     "xlsx": "^0.18.5",
     "zod": "^4.4.3",
     "@radix-ui/react-alert-dialog": "^1.1.17",
