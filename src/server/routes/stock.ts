@@ -1,8 +1,9 @@
 import { Elysia, t } from "elysia";
 import { randomUUID } from "crypto";
-import { authMiddleware, requireRole } from "../middleware/auth";
+import { authMiddleware } from "../middleware/auth";
 import { stockInQueries, stockOutQueries } from "../db/queries/stock";
 import { addAuditLog } from "../db/queries/dashboard";
+import pool from "../db/connection";
 
 export const stockRoutes = new Elysia()
   .use(authMiddleware)
@@ -22,14 +23,33 @@ export const stockRoutes = new Elysia()
         set.status = 403;
         return { error: "Akses ditolak" };
       }
+
       const id = randomUUID();
+      const conn = await pool.getConnection();
       try {
-        await stockInQueries.create(id, { ...body, user_id: user.id });
+        await conn.beginTransaction();
+
+        // Insert stock_in
+        await conn.query(
+          "INSERT INTO stock_in (id, product_id, supplier_id, qty, harga_beli, tanggal, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          [id, body.product_id, body.supplier_id, body.qty, body.harga_beli, body.tanggal, user.id]
+        );
+
+        // Update stok produk
+        await conn.query(
+          "UPDATE products SET stok = stok + ? WHERE id = ?",
+          [body.qty, body.product_id]
+        );
+
+        await conn.commit();
         await addAuditLog(randomUUID(), user.id, "INSERT", "stock_in", id, null, body);
         return { success: true, id };
-      } catch (err: unknown) {
+      } catch (err) {
+        await conn.rollback();
         set.status = 400;
         return { error: (err as Error).message };
+      } finally {
+        conn.release();
       }
     },
     {
@@ -58,14 +78,43 @@ export const stockRoutes = new Elysia()
         set.status = 403;
         return { error: "Akses ditolak" };
       }
-      const id = randomUUID();
+
+      const conn = await pool.getConnection();
       try {
-        await stockOutQueries.create(id, { ...body, user_id: user.id });
+        await conn.beginTransaction();
+
+        // Cek stok tersedia
+        const [rows] = await conn.query<import("mysql2").RowDataPacket[]>(
+          "SELECT stok FROM products WHERE id = ? FOR UPDATE",
+          [body.product_id]
+        );
+        if (!rows.length) throw new Error("Barang tidak ditemukan");
+
+        const currentStok = Number(rows[0].stok);
+        if (currentStok < body.qty) {
+          throw new Error(`Stok tidak mencukupi. Tersedia: ${currentStok}`);
+        }
+
+        const id = randomUUID();
+        await conn.query(
+          "INSERT INTO stock_out (id, product_id, qty, tanggal, keterangan, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+          [id, body.product_id, body.qty, body.tanggal, body.keterangan ?? null, user.id]
+        );
+
+        await conn.query(
+          "UPDATE products SET stok = stok - ? WHERE id = ?",
+          [body.qty, body.product_id]
+        );
+
+        await conn.commit();
         await addAuditLog(randomUUID(), user.id, "INSERT", "stock_out", id, null, body);
         return { success: true, id };
-      } catch (err: unknown) {
+      } catch (err) {
+        await conn.rollback();
         set.status = 400;
         return { error: (err as Error).message };
+      } finally {
+        conn.release();
       }
     },
     {
