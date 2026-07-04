@@ -21,44 +21,63 @@ Sistem inventaris berbasis web untuk kedai kopi. Dibangun dengan **Bun.js + Elys
 | Database | MySQL 8.x |
 | Auth | Email/Password + JWT (httpOnly cookie) |
 | UI | Shadcn/UI + Tailwind CSS v4 |
+| Process Manager | systemd (bukan PM2 — PM2 butuh Node.js) |
 
 ---
 
 ## Instalasi di VPS Fresh (Ubuntu 22.04)
 
-### 1. Update sistem
+### 1. Update sistem & install dependensi dasar
 
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl git nginx
 ```
 
-### 2. Install Bun
+### 2. Tambah swap (WAJIB untuk VPS RAM kecil)
+
+Build frontend butuh cukup banyak RAM. Tanpa swap, build bisa gagal dengan error `Killed` / `SIGKILL`.
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+# Verifikasi
+free -h
+```
+
+> Untuk VPS 1GB RAM, gunakan swap 4GB (`fallocate -l 4G`).
+
+### 3. Install Bun
 
 ```bash
 curl -fsSL https://bun.sh/install | bash
 source ~/.bashrc
-bun --version  # Pastikan terinstall
+
+# Verifikasi & catat path bun
+bun --version
+which bun    # contoh: /root/.bun/bin/bun
 ```
 
-### 3. Install MySQL 8
+### 4. Install MySQL 8
 
 ```bash
 sudo apt install -y mysql-server
 sudo systemctl start mysql
 sudo systemctl enable mysql
-
-# Amankan instalasi MySQL
 sudo mysql_secure_installation
 ```
 
-### 4. Buat database & user MySQL
+### 5. Buat database & user MySQL
 
 ```bash
 sudo mysql -u root -p
 ```
 
-Di dalam MySQL shell:
+Di dalam MySQL shell (ganti password dengan yang kuat):
 
 ```sql
 CREATE DATABASE coffeestock CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -68,29 +87,29 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-### 5. Clone repository
+### 6. Clone repository
 
 ```bash
 cd /var/www
-sudo git clone https://github.com/username/coffeestock.git
-sudo chown -R $USER:$USER /var/www/coffeestock
-cd /var/www/coffeestock
+sudo git clone https://github.com/username/coffeestock.git stok
+sudo chown -R $USER:$USER /var/www/stok
+cd /var/www/stok
 ```
 
-### 6. Install dependencies
+### 7. Install dependencies
 
 ```bash
 bun install
 ```
 
-### 7. Konfigurasi environment
+### 8. Konfigurasi environment
 
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-Isi nilai berikut di `.env`:
+Isi `.env`:
 
 ```env
 PORT=3001
@@ -102,18 +121,18 @@ DB_USER=coffeestock
 DB_PASSWORD=ganti_password_kuat_disini
 DB_NAME=coffeestock
 
-# Ganti dengan string acak yang panjang (min 32 karakter)
-JWT_SECRET=isi_dengan_string_rahasia_acak_sangat_panjang_disini
+# Generate dengan: openssl rand -base64 48
+JWT_SECRET=isi_dengan_string_rahasia_acak_sangat_panjang
 
 APP_URL=https://domain-anda.com
 ```
 
-> Untuk generate JWT_SECRET:
-> ```bash
-> openssl rand -base64 48
-> ```
+Generate JWT_SECRET:
+```bash
+openssl rand -base64 48
+```
 
-### 8. Jalankan migrasi database
+### 9. Jalankan migrasi database
 
 ```bash
 bun run migrate
@@ -123,67 +142,97 @@ Output yang diharapkan:
 ```
 Membuat database jika belum ada...
 Menjalankan migrations/001_schema.sql...
-✓ Migration selesai!
+✓ Migration selesai! (23 OK, 0 warning)
 ```
 
-### 9. Buat user Owner pertama
+### 10. Buat user Owner pertama
 
 ```bash
 # Default: owner@coffeestock.com / owner123
 bun run seed
 
-# Atau kustomisasi:
+# Atau kustom:
 OWNER_NAMA="Nama Owner" OWNER_EMAIL="email@anda.com" OWNER_PASSWORD="password_aman" bun run seed
 ```
 
-> Segera ganti password setelah login pertama melalui menu Pengaturan → Profil.
+> Segera ganti password setelah login pertama via menu Pengaturan → Profil.
 
-### 10. Build frontend
+### 11. Build frontend
 
 ```bash
 bun run build
 ```
 
-File frontend akan di-build ke folder `public/`.
+File hasil build masuk ke folder `public/`.
 
-### 11. Install PM2
+### 12. Jalankan aplikasi dengan systemd
 
-```bash
-bun install -g pm2
-```
+> PM2 TIDAK dipakai karena membutuhkan Node.js. systemd native di Ubuntu dan lebih stabil untuk aplikasi Bun.
 
-### 12. Jalankan aplikasi dengan PM2
+Buat service file:
 
 ```bash
-pm2 start "bun run start" --name coffeestock
-pm2 save
-pm2 startup  # Ikuti instruksi yang muncul untuk auto-start
+sudo nano /etc/systemd/system/coffeestock.service
 ```
 
-Cek status:
+Isi berikut (ganti `/root/.bun/bin/bun` sesuai output `which bun`):
+
+```ini
+[Unit]
+Description=CoffeeStock App
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/stok
+ExecStart=/root/.bun/bin/bun run src/server/index.ts
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+EnvironmentFile=/var/www/stok/.env
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Aktifkan & jalankan (auto-start saat boot):
+
 ```bash
-pm2 status
-pm2 logs coffeestock
+sudo systemctl daemon-reload
+sudo systemctl enable coffeestock
+sudo systemctl start coffeestock
 ```
 
-### 13. Konfigurasi Nginx
+Cek status & log:
+
+```bash
+sudo systemctl status coffeestock
+sudo journalctl -u coffeestock -f
+```
+
+Test aplikasi jalan:
+```bash
+curl http://localhost:3001/api/health
+# Harusnya: {"status":"ok","timestamp":"..."}
+```
+
+### 13. Konfigurasi Nginx (reverse proxy)
 
 ```bash
 sudo nano /etc/nginx/sites-available/coffeestock
 ```
 
-Isi konfigurasi:
+Isi (ganti `domain-anda.com` dengan domain atau IP VPS):
 
 ```nginx
 server {
     listen 80;
-    server_name domain-anda.com www.domain-anda.com;
+    server_name domain-anda.com;
 
-    # Gzip
     gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
 
-    # Proxy ke Bun server
     location / {
         proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
@@ -195,28 +244,28 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
-
-    # Static assets caching
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
-        proxy_pass http://localhost:3001;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
 }
 ```
 
 Aktifkan:
+
 ```bash
 sudo ln -s /etc/nginx/sites-available/coffeestock /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 14. (Opsional) Setup HTTPS dengan Certbot
+Akses di browser: `http://domain-anda.com` (atau `http://IP_VPS`)
+
+Login dengan:
+- Email: `owner@coffeestock.com`
+- Password: `owner123`
+
+### 14. (Opsional) HTTPS dengan Certbot
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d domain-anda.com -d www.domain-anda.com
+sudo certbot --nginx -d domain-anda.com
 sudo systemctl reload nginx
 ```
 
@@ -225,28 +274,23 @@ sudo systemctl reload nginx
 ## Development (Lokal)
 
 ### Prasyarat
-- [Bun](https://bun.sh) — install dengan `curl -fsSL https://bun.sh/install | bash`
+- [Bun](https://bun.sh) — `curl -fsSL https://bun.sh/install | bash`
 - MySQL 8.x running lokal
 
 ### Setup
 
 ```bash
-# Clone & install
 git clone ...
 cd coffeestock
 bun install
 
-# Setup environment
 cp .env.example .env
-# Edit .env sesuai konfigurasi MySQL lokal
+# Edit .env sesuai MySQL lokal
 
-# Jalankan migrasi
 bun run migrate
-
-# Buat user owner
 bun run seed
 
-# Jalankan development (API + Vite secara paralel)
+# Jalankan API + Vite paralel
 bun run dev
 ```
 
@@ -258,32 +302,34 @@ bun run dev
 ## Perintah Berguna
 
 ```bash
-# Jalankan development
+# Development
 bun run dev
 
 # Build frontend
 bun run build
 
-# Jalankan production
+# Jalankan production (manual, tanpa systemd)
 bun run start
 
-# Jalankan migrasi database
+# Migrasi database
 bun run migrate
 
 # Buat user owner
 bun run seed
 
-# Restart PM2
-pm2 restart coffeestock
+# ── systemd (production) ──
+sudo systemctl start coffeestock      # Start
+sudo systemctl stop coffeestock       # Stop
+sudo systemctl restart coffeestock    # Restart
+sudo systemctl status coffeestock     # Cek status
+sudo journalctl -u coffeestock -f     # Lihat log realtime
 
-# Lihat log
-pm2 logs coffeestock --lines 100
-
-# Update aplikasi
+# ── Update aplikasi ──
+cd /var/www/stok
 git pull
 bun install
 bun run build
-pm2 restart coffeestock
+sudo systemctl restart coffeestock
 ```
 
 ---
@@ -295,7 +341,7 @@ coffeestock/
 ├── src/
 │   ├── server/               # Backend Elysia.js
 │   │   ├── db/               # Database connection & queries
-│   │   ├── middleware/       # Auth middleware
+│   │   ├── middleware/       # Auth middleware (JWT)
 │   │   ├── routes/           # API routes
 │   │   └── index.ts          # Entry point
 │   └── client/               # Frontend React + Vite
@@ -305,7 +351,7 @@ coffeestock/
 │       ├── hooks/            # Custom hooks
 │       ├── types/            # TypeScript types
 │       └── main.tsx          # Router entry
-├── migrations/               # MySQL migrations
+├── migrations/               # MySQL migrations + seed
 ├── public/                   # Frontend build output
 ├── static/                   # Static assets
 ├── index.html                # Vite HTML entry
@@ -332,26 +378,43 @@ coffeestock/
 
 **App tidak bisa akses database:**
 ```bash
-# Cek MySQL running
 sudo systemctl status mysql
-
-# Test koneksi
 mysql -u coffeestock -p coffeestock -e "SELECT 1"
 ```
 
-**PM2 tidak auto-start setelah reboot:**
+**Build gagal (Killed / SIGKILL) — RAM habis:**
 ```bash
-pm2 startup
-# Jalankan perintah yang ditampilkan
-pm2 save
+# Pastikan swap aktif
+free -h
+
+# Kalau belum ada swap:
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+**Service tidak jalan / cek error:**
+```bash
+sudo systemctl status coffeestock
+sudo journalctl -u coffeestock -n 50 --no-pager
+```
+
+**Service tidak auto-start setelah reboot:**
+```bash
+sudo systemctl enable coffeestock
 ```
 
 **Port 3001 sudah dipakai:**
 ```bash
-# Cek proses di port 3001
 sudo lsof -i :3001
+# Ubah PORT di .env lalu:
+sudo systemctl restart coffeestock
+```
 
-# Ubah PORT di .env
-PORT=3002
-pm2 restart coffeestock
+**Login gagal "Email atau password salah":**
+```bash
+# Buat ulang user owner
+bun run seed
 ```
