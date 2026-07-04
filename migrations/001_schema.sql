@@ -136,14 +136,14 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   CONSTRAINT fk_audit_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX IF NOT EXISTS idx_products_kategori ON products(kategori_id);
-CREATE INDEX IF NOT EXISTS idx_products_supplier  ON products(supplier_id);
-CREATE INDEX IF NOT EXISTS idx_stock_in_tanggal   ON stock_in(tanggal);
-CREATE INDEX IF NOT EXISTS idx_stock_in_product   ON stock_in(product_id);
-CREATE INDEX IF NOT EXISTS idx_stock_out_tanggal  ON stock_out(tanggal);
-CREATE INDEX IF NOT EXISTS idx_stock_out_product  ON stock_out(product_id);
-CREATE INDEX IF NOT EXISTS idx_sales_tanggal      ON sales(tanggal);
-CREATE INDEX IF NOT EXISTS idx_audit_created      ON audit_logs(created_at);
+CREATE INDEX idx_products_kategori ON products(kategori_id);
+CREATE INDEX idx_products_supplier  ON products(supplier_id);
+CREATE INDEX idx_stock_in_tanggal   ON stock_in(tanggal);
+CREATE INDEX idx_stock_in_product   ON stock_in(product_id);
+CREATE INDEX idx_stock_out_tanggal  ON stock_out(tanggal);
+CREATE INDEX idx_stock_out_product  ON stock_out(product_id);
+CREATE INDEX idx_sales_tanggal      ON sales(tanggal);
+CREATE INDEX idx_audit_created      ON audit_logs(created_at);
 
 INSERT IGNORE INTO categories (id, nama) VALUES
   (UUID(), 'Biji Kopi'),
