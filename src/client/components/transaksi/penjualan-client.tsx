@@ -20,13 +20,13 @@ import { format } from "date-fns";
 
 export function PenjualanClient({
   recipes,
-  history,
+  sales,
 }: {
   recipes: Recipe[];
   sales: Sale[];
 }) {
   const qc = useQueryClient();
-  const history = sales;
+  const riwayat = sales;
   const [form, setForm] = useState({
     tanggal: format(new Date(), "yyyy-MM-dd"),
     recipe_id: "",
@@ -107,7 +107,7 @@ export function PenjualanClient({
         <CardHeader><CardTitle>Riwayat Penjualan</CardTitle></CardHeader>
         <CardContent>
           <DataTable
-            data={history}
+            data={riwayat}
             columns={historyColumns}
             getRowKey={(h) => h.id}
             searchPlaceholder="Cari menu..."
