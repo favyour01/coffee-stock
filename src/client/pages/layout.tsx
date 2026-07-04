@@ -1,11 +1,13 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth/context";
 import { dashboardApi } from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 export function DashboardLayout() {
   const { user } = useAuth();
+  const location = useLocation();
   const { data: lowStockProducts } = useQuery({
     queryKey: ["dashboard", "low-stock"],
     queryFn: dashboardApi.lowStock,
@@ -16,7 +18,9 @@ export function DashboardLayout() {
 
   return (
     <DashboardShell profile={user} lowStockCount={lowStockProducts?.length ?? 0}>
-      <Outlet />
+      <ErrorBoundary key={location.pathname}>
+        <Outlet />
+      </ErrorBoundary>
     </DashboardShell>
   );
 }

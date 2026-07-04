@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AuthProvider, useAuth } from "@/lib/auth/context";
+import { ErrorBoundary } from "@/components/error-boundary";
 import "./globals.css";
 
 // Pages
