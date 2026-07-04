@@ -1,0 +1,7 @@
+[install]
+# Faster installs
+cache = true
+
+[run]
+# Allow Bun to handle TypeScript directly
+bun = true
