@@ -15,6 +15,21 @@ export default defineConfig({
   build: {
     outDir: "public",
     emptyOutDir: true,
+    // Hemat memori saat build di VPS kecil
+    minify: "esbuild",
+    sourcemap: false,
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          charts: ["recharts"],
+          pdf: ["jspdf", "jspdf-autotable"],
+          excel: ["xlsx"],
+          scanner: ["html5-qrcode"],
+        },
+      },
+    },
   },
   server: {
     port: 3000,
