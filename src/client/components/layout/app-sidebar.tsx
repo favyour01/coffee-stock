@@ -107,7 +107,7 @@ export function AppSidebar({ role, lowStockCount = 0 }: AppSidebarProps) {
                         return (
                           <li key={child.href}>
                             <Link
-                              href={child.href}
+                              to={child.href}
                               className={cn(
                                 "flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent",
                                 pathname === child.href &&
@@ -137,7 +137,7 @@ export function AppSidebar({ role, lowStockCount = 0 }: AppSidebarProps) {
             return (
               <li key={item.href}>
                 <Link
-                  href={item.href!}
+                  to={item.href!}
                   className={cn(
                     "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent",
                     isActive && "bg-sidebar-accent text-sidebar-primary"

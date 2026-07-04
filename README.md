@@ -419,3 +419,11 @@ sudo systemctl restart coffeestock
 # Buat ulang user owner
 bun run seed
 ```
+
+**`/api/health` atau frontend balas "Unauthorized: token tidak ditemukan":**
+Pastikan pakai versi terbaru (auth middleware scope harus `scoped`, bukan `global`).
+```bash
+git pull
+sudo systemctl restart coffeestock
+curl http://localhost:3001/api/health   # harus {"status":"ok",...}
+```

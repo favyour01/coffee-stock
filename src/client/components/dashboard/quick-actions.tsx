@@ -102,7 +102,7 @@ export function QuickActions({ role }: { role: UserRole }) {
             return (
               <Link
                 key={action.href}
-                href={action.href}
+                to={action.href}
                 className="flex items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
               >
                 <div className="rounded-md bg-primary/10 p-2">
