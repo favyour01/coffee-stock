@@ -17,9 +17,11 @@ export const jwtPlugin = jwt({
 });
 
 // Middleware auth: inject user ke context
+// Scope "scoped" agar hanya berlaku di route group yang memakainya,
+// TIDAK bocor ke root app (health check, static files, SPA fallback)
 export const authMiddleware = new Elysia({ name: "auth-middleware" })
   .use(jwtPlugin)
-  .derive({ as: "global" }, async ({ jwt, cookie, set }) => {
+  .derive({ as: "scoped" }, async ({ jwt, cookie, set }) => {
     const token = cookie.auth_token?.value;
     if (!token) {
       set.status = 401;

@@ -223,12 +223,12 @@ curl http://localhost:3001/api/health
 sudo nano /etc/nginx/sites-available/coffeestock
 ```
 
-Isi (ganti `domain-anda.com` dengan domain atau IP VPS):
+Isi (`server_name _` menerima semua host, cocok untuk akses via IP; ganti dengan domain jika ada):
 
 ```nginx
 server {
     listen 80;
-    server_name domain-anda.com;
+    server_name _;
 
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
@@ -247,10 +247,11 @@ server {
 }
 ```
 
-Aktifkan:
+Aktifkan (dan hapus config default Nginx):
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/coffeestock /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/coffeestock /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 ```
