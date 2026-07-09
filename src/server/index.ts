@@ -45,12 +45,12 @@ if (isProd) {
   app
     // Asset JS/CSS — HARUS sebelum SPA fallback
     .get("/assets/*", ({ params, set }) => {
-      const file = Bun.file(join(PUBLIC_DIR, "assets", params["*"]));
-      if (!file.size) {
+      const filePath = join(PUBLIC_DIR, "assets", params["*"]);
+      if (!existsSync(filePath)) {
         set.status = 404;
         return { error: "Asset tidak ditemukan" };
       }
-      return file;
+      return Bun.file(filePath);
     })
     // File statis lain (favicon, dll)
     .get("/favicon.svg", () => Bun.file(join(PUBLIC_DIR, "favicon.svg")))
