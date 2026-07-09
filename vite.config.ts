@@ -14,7 +14,7 @@ export default defineConfig({
   publicDir: "static",
   build: {
     outDir: "public",
-    emptyOutDir: true,
+    emptyOutDir: false,
     // Hemat memori saat build di VPS kecil
     minify: "esbuild",
     sourcemap: false,

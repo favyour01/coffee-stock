@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -172,11 +171,9 @@ export function UserClient({ users }: { users: User[] }) {
     <div className="space-y-6">
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" />Tambah User
-            </Button>
-          </DialogTrigger>
+          <Button onClick={() => { resetForm(); setOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" />Tambah User
+          </Button>
           <DialogContent className="p-0 sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>{editing ? "Edit" : "Tambah"} User</DialogTitle>
