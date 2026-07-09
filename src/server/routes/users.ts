@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import bcrypt from "bcryptjs";
 import { authMiddleware, requireRole } from "../middleware/auth";
 import { userQueries } from "../db/queries/users";
 import { execute } from "../db/connection";
@@ -22,6 +23,43 @@ export const userRoutes = new Elysia({ prefix: "/api/users" })
   .use(requireRole(["owner"]))
 
   .get("/", () => userQueries.findAll())
+
+  .put(
+    "/:id",
+    async ({ params, body, set }) => {
+      const target = await userQueries.findById(params.id);
+      if (!target) {
+        set.status = 404;
+        return { error: "User tidak ditemukan" };
+      }
+
+      const existing = await userQueries.findByEmail(body.email);
+      if (existing && existing.id !== params.id) {
+        set.status = 409;
+        return { error: "Email sudah terdaftar" };
+      }
+
+      await userQueries.updateProfile(params.id, body.nama, body.email);
+      return { success: true };
+    },
+    { body: t.Object({ nama: t.String({ minLength: 1 }), email: t.String({ format: "email" }) }) }
+  )
+
+  .put(
+    "/:id/password",
+    async ({ params, body, set }) => {
+      const target = await userQueries.findById(params.id);
+      if (!target) {
+        set.status = 404;
+        return { error: "User tidak ditemukan" };
+      }
+
+      const passwordHash = await bcrypt.hash(body.password, 12);
+      await userQueries.updatePassword(params.id, passwordHash);
+      return { success: true };
+    },
+    { body: t.Object({ password: t.String({ minLength: 6 }) }) }
+  )
 
   .put(
     "/:id/role",

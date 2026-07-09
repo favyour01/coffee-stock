@@ -166,6 +166,10 @@ export const userApi = {
   myProfile: () => api.get<User>("/users/me/profile"),
   updateProfile: (data: { nama: string; email: string }) =>
     api.put("/users/me/profile", data),
+  update: (id: string, data: { nama: string; email: string }) =>
+    api.put(`/users/${id}`, data),
+  resetPassword: (id: string, password: string) =>
+    api.put(`/users/${id}/password`, { password }),
   updateRole: (id: string, role: string) =>
     api.put(`/users/${id}/role`, { role }),
   updateStatus: (id: string, is_active: boolean) =>

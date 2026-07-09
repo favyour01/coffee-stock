@@ -115,7 +115,12 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
         nama: t.String({ minLength: 1 }),
         email: t.String({ format: "email" }),
         password: t.String({ minLength: 6 }),
-        role: t.Union([t.Literal("admin"), t.Literal("stok"), t.Literal("kasir")]),
+        role: t.Union([
+          t.Literal("owner"),
+          t.Literal("admin"),
+          t.Literal("stok"),
+          t.Literal("kasir"),
+        ]),
       }),
     }
   );
