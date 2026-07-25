@@ -35,7 +35,10 @@ async function request<T>(
     let message = `HTTP ${res.status}`;
     try {
       const data = await res.json();
-      message = data.error || data.message || message;
+      const detail = data.error || data.summary || data.message;
+      if (detail) {
+        message = data.property ? `${detail} (${data.property})` : detail;
+      }
     } catch {
       // ignore
     }

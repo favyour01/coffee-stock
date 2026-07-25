@@ -58,7 +58,7 @@ export function PenjualanClient({
       await saleApi.create({
         tanggal: form.tanggal,
         recipe_id: form.recipe_id,
-        qty: form.qty,
+        qty: Number(form.qty),
       });
       toast.success("Penjualan berhasil — stok bahan otomatis berkurang");
       qc.invalidateQueries({ queryKey: ["sales"] });

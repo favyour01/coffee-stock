@@ -58,7 +58,7 @@ export function StockOutClient({
       await stockApi.outCreate({
         tanggal: form.tanggal,
         product_id: form.product_id,
-        qty: form.qty,
+        qty: Number(form.qty),
         keterangan: form.keterangan || undefined,
       });
       toast.success("Barang keluar berhasil dicatat");

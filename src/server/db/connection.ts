@@ -7,6 +7,8 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "coffeestock",
   charset: "utf8mb4",
+  // DECIMAL default dikembalikan sebagai string — paksa jadi number agar payload API konsisten
+  decimalNumbers: true,
   waitForConnections: true,
   connectionLimit: 20,
   queueLimit: 0,

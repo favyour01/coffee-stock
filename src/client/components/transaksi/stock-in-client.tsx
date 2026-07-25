@@ -51,7 +51,7 @@ export function StockInClient({ products, suppliers, history }: StockInClientPro
     setForm({
       ...form,
       product_id: productId,
-      harga_beli: product?.harga_beli ?? 0,
+      harga_beli: product ? Number(product.harga_beli) : 0,
     });
   };
 
@@ -76,8 +76,8 @@ export function StockInClient({ products, suppliers, history }: StockInClientPro
         tanggal: form.tanggal,
         supplier_id: form.supplier_id,
         product_id: form.product_id,
-        qty: form.qty,
-        harga_beli: form.harga_beli,
+        qty: Number(form.qty),
+        harga_beli: Number(form.harga_beli),
       });
       toast.success("Barang masuk berhasil dicatat");
       qc.invalidateQueries({ queryKey: ["stock-in"] });

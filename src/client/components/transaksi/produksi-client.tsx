@@ -73,10 +73,10 @@ export function ProduksiClient({
     const currentItems = recipeItems(recipe);
     setEditing(recipe);
     setNamaMenu(recipe.nama_menu);
-    setHargaJual(recipe.harga_jual);
+    setHargaJual(Number(recipe.harga_jual));
     setItems(
       currentItems.length > 0
-        ? currentItems.map((i) => ({ product_id: i.product_id, qty: i.qty }))
+        ? currentItems.map((i) => ({ product_id: i.product_id, qty: Number(i.qty) }))
         : [emptyItem()]
     );
     setOpen(true);
@@ -95,7 +95,7 @@ export function ProduksiClient({
 
     const validItems = items
       .filter((i) => i.product_id && i.qty !== "" && i.qty > 0)
-      .map((i) => ({ product_id: i.product_id, qty: i.qty as number }));
+      .map((i) => ({ product_id: i.product_id, qty: Number(i.qty) }));
 
     if (validItems.length === 0) {
       toast.error("Tambahkan minimal 1 bahan dengan qty lebih dari 0");
@@ -111,7 +111,7 @@ export function ProduksiClient({
     }
 
     setLoading(true);
-    const data = { nama_menu: namaMenu, harga_jual: hargaJual, items: validItems };
+    const data = { nama_menu: namaMenu, harga_jual: Number(hargaJual), items: validItems };
     try {
       if (editing) await recipeApi.update(editing.id, data);
       else await recipeApi.create(data);

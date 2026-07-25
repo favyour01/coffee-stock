@@ -134,9 +134,9 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
       kategori_id: form.kategori_id || null,
       supplier_id: form.supplier_id || null,
       satuan: form.satuan,
-      harga_beli: form.harga_beli,
-      harga_jual: form.harga_jual,
-      minimum_stok: form.minimum_stok,
+      harga_beli: Number(form.harga_beli),
+      harga_jual: Number(form.harga_jual),
+      minimum_stok: Number(form.minimum_stok),
     };
     try {
       if (editing) await productApi.update(editing.id, data);
@@ -157,9 +157,9 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
       kategori_id: p.kategori_id,
       supplier_id: p.supplier_id,
       satuan: p.satuan,
-      harga_beli: p.harga_beli,
-      harga_jual: p.harga_jual,
-      minimum_stok: p.minimum_stok,
+      harga_beli: Number(p.harga_beli),
+      harga_jual: Number(p.harga_jual),
+      minimum_stok: Number(p.minimum_stok),
     });
     setOpen(true);
   };
