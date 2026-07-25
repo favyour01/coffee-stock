@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth/context";
 import { dashboardApi } from "@/lib/api";
@@ -14,7 +14,7 @@ export function DashboardLayout() {
     staleTime: 60_000,
   });
 
-  if (!user) return null;
+  if (!user) return <Navigate to="/login" replace />;
 
   return (
     <DashboardShell profile={user} lowStockCount={lowStockProducts?.length ?? 0}>

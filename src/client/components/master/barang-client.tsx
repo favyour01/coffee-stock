@@ -14,7 +14,7 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Plus, Pencil, Trash2, QrCode, ScanLine } from "lucide-react";
 import { productApi } from "@/lib/api";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, numericDraftValue, toNumericDraft, type NumericDraft } from "@/lib/utils";
 import type { Product, Category, Supplier, Unit } from "@/types";
 import { BarcodeScanner } from "@/components/scanner/barcode-scanner";
 import { useAuth } from "@/lib/auth/context";
@@ -26,10 +26,26 @@ interface BarangClientProps {
   units: Unit[];
 }
 
-const emptyForm = {
-  kode_barang: "", nama_barang: "", kategori_id: "" as string | null,
-  supplier_id: "" as string | null, satuan: "pcs",
-  harga_beli: 0, harga_jual: 0, minimum_stok: 0,
+type BarangForm = {
+  kode_barang: string;
+  nama_barang: string;
+  kategori_id: string | null;
+  supplier_id: string | null;
+  satuan: string;
+  harga_beli: NumericDraft;
+  harga_jual: NumericDraft;
+  minimum_stok: NumericDraft;
+};
+
+const emptyForm: BarangForm = {
+  kode_barang: "",
+  nama_barang: "",
+  kategori_id: null,
+  supplier_id: null,
+  satuan: "pcs",
+  harga_beli: 0,
+  harga_jual: 0,
+  minimum_stok: 0,
 };
 
 export function BarangClient({ products, categories, suppliers, units }: BarangClientProps) {
@@ -42,10 +58,20 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
   const [scanOpen, setScanOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<BarangForm>(emptyForm);
   const [filterKategori, setFilterKategori] = useState("all");
   const [filterStok, setFilterStok] = useState("all");
   const [loading, setLoading] = useState(false);
+
+  const resetForm = () => {
+    setEditing(null);
+    setForm(emptyForm);
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) resetForm();
+  };
 
   const tableData = useMemo(() => {
     return products.filter((p) => {
@@ -92,27 +118,53 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.harga_beli === "" || form.harga_jual === "" || form.minimum_stok === "") {
+      toast.error("Harga dan minimum stok wajib diisi");
+      return;
+    }
+    if (form.harga_beli < 0 || form.harga_jual < 0 || form.minimum_stok < 0) {
+      toast.error("Harga dan minimum stok tidak boleh negatif");
+      return;
+    }
+
     setLoading(true);
-    const data = { ...form, kategori_id: form.kategori_id || null, supplier_id: form.supplier_id || null };
+    const data = {
+      kode_barang: form.kode_barang,
+      nama_barang: form.nama_barang,
+      kategori_id: form.kategori_id || null,
+      supplier_id: form.supplier_id || null,
+      satuan: form.satuan,
+      harga_beli: form.harga_beli,
+      harga_jual: form.harga_jual,
+      minimum_stok: form.minimum_stok,
+    };
     try {
       if (editing) await productApi.update(editing.id, data);
       else await productApi.create(data);
       toast.success(editing ? "Barang diperbarui" : "Barang ditambahkan");
       qc.invalidateQueries({ queryKey: ["products"] });
-      setOpen(false); setEditing(null); setForm(emptyForm);
-    } catch (e) { toast.error((e as Error).message); }
+      setOpen(false);
+      resetForm();
+    } catch (err) { toast.error((err as Error).message); }
     finally { setLoading(false); }
   };
 
   const handleEdit = (p: Product) => {
     setEditing(p);
-    setForm({ kode_barang: p.kode_barang, nama_barang: p.nama_barang, kategori_id: p.kategori_id ?? "", supplier_id: p.supplier_id ?? "", satuan: p.satuan, harga_beli: p.harga_beli, harga_jual: p.harga_jual, minimum_stok: p.minimum_stok });
+    setForm({
+      kode_barang: p.kode_barang,
+      nama_barang: p.nama_barang,
+      kategori_id: p.kategori_id,
+      supplier_id: p.supplier_id,
+      satuan: p.satuan,
+      harga_beli: p.harga_beli,
+      harga_jual: p.harga_jual,
+      minimum_stok: p.minimum_stok,
+    });
     setOpen(true);
   };
 
   const handleGenerateQR = async (product: Product) => {
-    // QR generation sekarang dilakukan di backend saat buat produk
-    // Untuk generate manual, tampilkan kode sebagai teks
     toast.info(`Kode: ${product.kode_barang} — QR tersedia setelah produk disimpan`);
   };
 
@@ -123,9 +175,11 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
           <ScanLine className="mr-2 h-4 w-4" />Scan
         </Button>
         {canEdit && (
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm); } }}>
+          <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" />Tambah Barang</Button>
+              <Button onClick={() => resetForm()}>
+                <Plus className="mr-2 h-4 w-4" />Tambah Barang
+              </Button>
             </DialogTrigger>
             <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden p-0 sm:max-w-xl">
               <DialogHeader><DialogTitle>{editing ? "Edit" : "Tambah"} Barang</DialogTitle></DialogHeader>
@@ -135,15 +189,27 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
                     <Field label="Kode Barang"><Input value={form.kode_barang} onChange={(e) => setForm({ ...form, kode_barang: e.target.value })} required /></Field>
                     <Field label="Nama Barang"><Input value={form.nama_barang} onChange={(e) => setForm({ ...form, nama_barang: e.target.value })} required /></Field>
                     <Field label="Kategori">
-                      <Select value={form.kategori_id ?? ""} onValueChange={(v) => setForm({ ...form, kategori_id: v })}>
+                      <Select
+                        value={form.kategori_id ?? undefined}
+                        onValueChange={(v) => setForm({ ...form, kategori_id: v === "__none__" ? null : v })}
+                      >
                         <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
-                        <SelectContent>{categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.nama}</SelectItem>)}</SelectContent>
+                        <SelectContent>
+                          <SelectItem value="__none__">Tanpa kategori</SelectItem>
+                          {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.nama}</SelectItem>)}
+                        </SelectContent>
                       </Select>
                     </Field>
                     <Field label="Supplier">
-                      <Select value={form.supplier_id ?? ""} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
+                      <Select
+                        value={form.supplier_id ?? undefined}
+                        onValueChange={(v) => setForm({ ...form, supplier_id: v === "__none__" ? null : v })}
+                      >
                         <SelectTrigger><SelectValue placeholder="Pilih supplier" /></SelectTrigger>
-                        <SelectContent>{suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>)}</SelectContent>
+                        <SelectContent>
+                          <SelectItem value="__none__">Tanpa supplier</SelectItem>
+                          {suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>)}
+                        </SelectContent>
                       </Select>
                     </Field>
                     <Field label="Satuan">
@@ -156,9 +222,31 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
                         <Input value={form.satuan} onChange={(e) => setForm({ ...form, satuan: e.target.value })} placeholder="pcs, Kg, Liter..." required />
                       )}
                     </Field>
-                    <Field label="Minimum Stok"><Input type="number" min={0} step="0.001" value={form.minimum_stok} onChange={(e) => setForm({ ...form, minimum_stok: Number(e.target.value) })} /></Field>
-                    <Field label="Harga Beli"><Input type="number" min={0} value={form.harga_beli} onChange={(e) => setForm({ ...form, harga_beli: Number(e.target.value) })} /></Field>
-                    <Field label="Harga Jual"><Input type="number" min={0} value={form.harga_jual} onChange={(e) => setForm({ ...form, harga_jual: Number(e.target.value) })} /></Field>
+                    <Field label="Minimum Stok">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        value={numericDraftValue(form.minimum_stok)}
+                        onChange={(e) => setForm({ ...form, minimum_stok: toNumericDraft(e.target.value) })}
+                      />
+                    </Field>
+                    <Field label="Harga Beli">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={numericDraftValue(form.harga_beli)}
+                        onChange={(e) => setForm({ ...form, harga_beli: toNumericDraft(e.target.value) })}
+                      />
+                    </Field>
+                    <Field label="Harga Jual">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={numericDraftValue(form.harga_jual)}
+                        onChange={(e) => setForm({ ...form, harga_jual: toNumericDraft(e.target.value) })}
+                      />
+                    </Field>
                   </FormGrid>
                   <Button type="submit" disabled={loading} className="w-full">{loading ? "Menyimpan..." : "Simpan"}</Button>
                 </DialogForm>
@@ -200,7 +288,6 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
         }
       />
 
-      {/* QR Dialog */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
         <DialogContent className="p-0 sm:max-w-md">
           <DialogHeader><DialogTitle>QR Code - {selectedProduct?.nama_barang}</DialogTitle></DialogHeader>
@@ -218,7 +305,6 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
         </DialogContent>
       </Dialog>
 
-      {/* Scan Dialog */}
       <Dialog open={scanOpen} onOpenChange={setScanOpen}>
         <DialogContent className="p-0 sm:max-w-md">
           <DialogHeader><DialogTitle>Scan Barcode</DialogTitle></DialogHeader>

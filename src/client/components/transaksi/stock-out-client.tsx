@@ -15,7 +15,7 @@ import { Field, FormStack } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { stockApi } from "@/lib/api";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/utils";
+import { formatDate, numericDraftValue, toNumericDraft, type NumericDraft } from "@/lib/utils";
 import type { Product, StockOut } from "@/types";
 import { format } from "date-fns";
 
@@ -27,7 +27,12 @@ export function StockOutClient({
   history: StockOut[];
 }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    tanggal: string;
+    product_id: string;
+    qty: NumericDraft;
+    keterangan: string;
+  }>({
     tanggal: format(new Date(), "yyyy-MM-dd"),
     product_id: "",
     qty: 1,
@@ -39,14 +44,28 @@ export function StockOutClient({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.product_id) {
+      toast.error("Barang wajib dipilih");
+      return;
+    }
+    if (form.qty === "" || form.qty <= 0) {
+      toast.error("Qty harus lebih dari 0");
+      return;
+    }
+
     setLoading(true);
     try {
-      await stockApi.outCreate(form);
+      await stockApi.outCreate({
+        tanggal: form.tanggal,
+        product_id: form.product_id,
+        qty: form.qty,
+        keterangan: form.keterangan || undefined,
+      });
       toast.success("Barang keluar berhasil dicatat");
       qc.invalidateQueries({ queryKey: ["stock-out"] });
       qc.invalidateQueries({ queryKey: ["products"] });
       setForm({ ...form, qty: 1, keterangan: "", product_id: "" });
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (err) { toast.error((err as Error).message); }
     finally { setLoading(false); }
   };
 
@@ -70,7 +89,11 @@ export function StockOutClient({
               <Input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} required />
             </Field>
             <Field label="Barang">
-              <Select value={form.product_id} onValueChange={(v) => setForm({ ...form, product_id: v })} required>
+              <Select
+                value={form.product_id || undefined}
+                onValueChange={(v) => setForm({ ...form, product_id: v })}
+                required
+              >
                 <SelectTrigger><SelectValue placeholder="Pilih barang" /></SelectTrigger>
                 <SelectContent>
                   {products.map((p) => (
@@ -87,7 +110,14 @@ export function StockOutClient({
               </p>
             )}
             <Field label={`Qty (${selectedProduct?.satuan ?? "satuan"})`}>
-              <Input type="number" min={0.001} step="0.001" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} required />
+              <Input
+                type="number"
+                min={0.001}
+                step="0.001"
+                value={numericDraftValue(form.qty)}
+                onChange={(e) => setForm({ ...form, qty: toNumericDraft(e.target.value) })}
+                required
+              />
             </Field>
             <Field label="Keterangan" hint="Opsional — contoh: pemakaian harian">
               <Textarea value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} placeholder="Contoh: Pemakaian harian" />
@@ -106,7 +136,7 @@ export function StockOutClient({
             getRowKey={(h) => h.id}
             searchPlaceholder="Cari barang atau keterangan..."
             searchFilter={(h, q) =>
-              (h.products?.nama_barang ?? "").toLowerCase().includes(q) ||
+              (h.product_nama ?? h.products?.nama_barang ?? "").toLowerCase().includes(q) ||
               (h.keterangan ?? "").toLowerCase().includes(q)
             }
             emptyMessage="Belum ada riwayat barang keluar"

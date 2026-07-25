@@ -14,7 +14,7 @@ import { Field, FormStack } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { saleApi } from "@/lib/api";
 import { toast } from "sonner";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, numericDraftValue, toNumericDraft, type NumericDraft } from "@/lib/utils";
 import type { Recipe, Sale } from "@/types";
 import { format } from "date-fns";
 
@@ -27,7 +27,11 @@ export function PenjualanClient({
 }) {
   const qc = useQueryClient();
   const riwayat = sales;
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    tanggal: string;
+    recipe_id: string;
+    qty: NumericDraft;
+  }>({
     tanggal: format(new Date(), "yyyy-MM-dd"),
     recipe_id: "",
     qty: 1,
@@ -35,17 +39,32 @@ export function PenjualanClient({
   const [loading, setLoading] = useState(false);
 
   const selectedRecipe = recipes.find((r) => r.id === form.recipe_id);
+  const recipeItems = selectedRecipe?.items ?? [];
+  const qtyNumber = form.qty === "" ? 0 : form.qty;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.recipe_id) {
+      toast.error("Pilih menu terlebih dahulu");
+      return;
+    }
+    if (form.qty === "" || !Number.isInteger(form.qty) || form.qty < 1) {
+      toast.error("Jumlah harus bilangan bulat minimal 1");
+      return;
+    }
+
     setLoading(true);
     try {
-      await saleApi.create(form);
+      await saleApi.create({
+        tanggal: form.tanggal,
+        recipe_id: form.recipe_id,
+        qty: form.qty,
+      });
       toast.success("Penjualan berhasil — stok bahan otomatis berkurang");
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["products"] });
       setForm({ ...form, qty: 1, recipe_id: "" });
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (err) { toast.error((err as Error).message); }
     finally { setLoading(false); }
   };
 
@@ -68,7 +87,11 @@ export function PenjualanClient({
               <Input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} required />
             </Field>
             <Field label="Menu">
-              <Select value={form.recipe_id} onValueChange={(v) => setForm({ ...form, recipe_id: v })} required>
+              <Select
+                value={form.recipe_id || undefined}
+                onValueChange={(v) => setForm({ ...form, recipe_id: v })}
+                required
+              >
                 <SelectTrigger><SelectValue placeholder="Pilih menu" /></SelectTrigger>
                 <SelectContent>
                   {recipes.map((r) => (
@@ -82,20 +105,31 @@ export function PenjualanClient({
             {selectedRecipe && (
               <div className="rounded-lg bg-muted p-4 text-sm">
                 <p className="mb-2 font-medium">Bahan yang akan berkurang:</p>
-                {selectedRecipe.recipe_items?.map((item) => (
-                  <p key={item.id} className="text-muted-foreground">
-                    {item.products?.nama_barang}: {Number(item.qty) * form.qty} {item.products?.satuan}
-                  </p>
-                ))}
+                {recipeItems.length === 0 ? (
+                  <p className="text-muted-foreground">Resep ini belum memiliki bahan.</p>
+                ) : (
+                  recipeItems.map((item) => (
+                    <p key={item.id} className="text-muted-foreground">
+                      {item.product_nama}: {Number(item.qty) * qtyNumber} {item.satuan}
+                    </p>
+                  ))
+                )}
               </div>
             )}
             <Field label="Jumlah">
-              <Input type="number" min={1} value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} required />
+              <Input
+                type="number"
+                min={1}
+                step={1}
+                value={numericDraftValue(form.qty)}
+                onChange={(e) => setForm({ ...form, qty: toNumericDraft(e.target.value) })}
+                required
+              />
             </Field>
             {selectedRecipe && (
               <div className="rounded-lg bg-primary/10 p-4">
                 <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-xl font-bold">{formatCurrency(selectedRecipe.harga_jual * form.qty)}</p>
+                <p className="text-xl font-bold">{formatCurrency(selectedRecipe.harga_jual * qtyNumber)}</p>
               </div>
             )}
             <Button type="submit" disabled={loading} className="w-full">{loading ? "Memproses..." : "Catat Penjualan"}</Button>
@@ -111,7 +145,9 @@ export function PenjualanClient({
             columns={historyColumns}
             getRowKey={(h) => h.id}
             searchPlaceholder="Cari menu..."
-            searchFilter={(h, q) => (h.recipes?.nama_menu ?? "").toLowerCase().includes(q)}
+            searchFilter={(h, q) =>
+              (h.recipe_nama ?? h.recipes?.nama_menu ?? "").toLowerCase().includes(q)
+            }
             emptyMessage="Belum ada riwayat penjualan"
             defaultPageSize={5}
             pageSizeOptions={[5, 10, 20]}

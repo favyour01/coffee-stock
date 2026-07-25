@@ -47,10 +47,22 @@ function DialogOverlay({
   )
 }
 
+function isSelectPortalTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false
+  return Boolean(
+    target.closest("[data-slot=select-content]") ||
+      target.closest("[data-radix-select-content]") ||
+      target.closest("[data-radix-popper-content-wrapper]")
+  )
+}
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onInteractOutside,
+  onPointerDownOutside,
+  onFocusOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
@@ -65,6 +77,18 @@ function DialogContent({
           className
         )}
         {...props}
+        onInteractOutside={(e) => {
+          if (isSelectPortalTarget(e.target)) e.preventDefault()
+          onInteractOutside?.(e)
+        }}
+        onPointerDownOutside={(e) => {
+          if (isSelectPortalTarget(e.target)) e.preventDefault()
+          onPointerDownOutside?.(e)
+        }}
+        onFocusOutside={(e) => {
+          if (isSelectPortalTarget(e.target)) e.preventDefault()
+          onFocusOutside?.(e)
+        }}
       >
         {children}
         {showCloseButton && (

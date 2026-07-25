@@ -93,7 +93,6 @@ export interface Recipe {
   harga_jual: number;
   created_at: string;
   items?: RecipeItem[];
-  recipe_items?: RecipeItem[];
 }
 
 export interface RecipeItem {
@@ -103,7 +102,6 @@ export interface RecipeItem {
   qty: number;
   product_nama?: string;
   satuan?: string;
-  products?: Product;
 }
 
 export interface Sale {

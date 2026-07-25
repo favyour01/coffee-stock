@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -15,7 +14,7 @@ import { Field, FormGrid, FormStack } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { stockApi } from "@/lib/api";
 import { toast } from "sonner";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, numericDraftValue, toNumericDraft, type NumericDraft } from "@/lib/utils";
 import type { Product, Supplier, StockIn } from "@/types";
 import { format } from "date-fns";
 
@@ -27,7 +26,13 @@ interface StockInClientProps {
 
 export function StockInClient({ products, suppliers, history }: StockInClientProps) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    tanggal: string;
+    supplier_id: string;
+    product_id: string;
+    qty: NumericDraft;
+    harga_beli: NumericDraft;
+  }>({
     tanggal: format(new Date(), "yyyy-MM-dd"),
     supplier_id: "",
     product_id: "",
@@ -36,7 +41,9 @@ export function StockInClient({ products, suppliers, history }: StockInClientPro
   });
   const [loading, setLoading] = useState(false);
 
-  const total = form.qty * form.harga_beli;
+  const qtyNumber = form.qty === "" ? 0 : form.qty;
+  const hargaNumber = form.harga_beli === "" ? 0 : form.harga_beli;
+  const total = qtyNumber * hargaNumber;
   const selectedProduct = products.find((p) => p.id === form.product_id);
 
   const handleProductChange = (productId: string) => {
@@ -50,14 +57,33 @@ export function StockInClient({ products, suppliers, history }: StockInClientPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.supplier_id || !form.product_id) {
+      toast.error("Supplier dan barang wajib dipilih");
+      return;
+    }
+    if (form.qty === "" || form.qty <= 0) {
+      toast.error("Qty harus lebih dari 0");
+      return;
+    }
+    if (form.harga_beli === "" || form.harga_beli < 0) {
+      toast.error("Harga beli tidak valid");
+      return;
+    }
+
     setLoading(true);
     try {
-      await stockApi.inCreate(form);
+      await stockApi.inCreate({
+        tanggal: form.tanggal,
+        supplier_id: form.supplier_id,
+        product_id: form.product_id,
+        qty: form.qty,
+        harga_beli: form.harga_beli,
+      });
       toast.success("Barang masuk berhasil dicatat");
       qc.invalidateQueries({ queryKey: ["stock-in"] });
       qc.invalidateQueries({ queryKey: ["products"] });
       setForm({ ...form, qty: 1, harga_beli: 0, product_id: "" });
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (err) { toast.error((err as Error).message); }
     finally { setLoading(false); }
   };
 
@@ -81,13 +107,21 @@ export function StockInClient({ products, suppliers, history }: StockInClientPro
               <Input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} required />
             </Field>
             <Field label="Supplier">
-              <Select value={form.supplier_id} onValueChange={(v) => setForm({ ...form, supplier_id: v })} required>
+              <Select
+                value={form.supplier_id || undefined}
+                onValueChange={(v) => setForm({ ...form, supplier_id: v })}
+                required
+              >
                 <SelectTrigger><SelectValue placeholder="Pilih supplier" /></SelectTrigger>
                 <SelectContent>{suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
             <Field label="Barang">
-              <Select value={form.product_id} onValueChange={handleProductChange} required>
+              <Select
+                value={form.product_id || undefined}
+                onValueChange={handleProductChange}
+                required
+              >
                 <SelectTrigger><SelectValue placeholder="Pilih barang" /></SelectTrigger>
                 <SelectContent>
                   {products.map((p) => (
@@ -105,10 +139,23 @@ export function StockInClient({ products, suppliers, history }: StockInClientPro
             )}
             <FormGrid>
               <Field label={`Qty (${selectedProduct?.satuan ?? "satuan"})`}>
-                <Input type="number" min={0.001} step="0.001" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} required />
+                <Input
+                  type="number"
+                  min={0.001}
+                  step="0.001"
+                  value={numericDraftValue(form.qty)}
+                  onChange={(e) => setForm({ ...form, qty: toNumericDraft(e.target.value) })}
+                  required
+                />
               </Field>
               <Field label="Harga Beli">
-                <Input type="number" min={0} value={form.harga_beli} onChange={(e) => setForm({ ...form, harga_beli: Number(e.target.value) })} required />
+                <Input
+                  type="number"
+                  min={0}
+                  value={numericDraftValue(form.harga_beli)}
+                  onChange={(e) => setForm({ ...form, harga_beli: toNumericDraft(e.target.value) })}
+                  required
+                />
               </Field>
             </FormGrid>
             <div className="rounded-lg bg-muted p-4">
@@ -128,7 +175,9 @@ export function StockInClient({ products, suppliers, history }: StockInClientPro
             columns={historyColumns}
             getRowKey={(h) => h.id}
             searchPlaceholder="Cari barang..."
-            searchFilter={(h, q) => (h.products?.nama_barang ?? "").toLowerCase().includes(q)}
+            searchFilter={(h, q) =>
+              (h.product_nama ?? h.products?.nama_barang ?? "").toLowerCase().includes(q)
+            }
             emptyMessage="Belum ada riwayat barang masuk"
             defaultPageSize={5}
             pageSizeOptions={[5, 10, 20]}

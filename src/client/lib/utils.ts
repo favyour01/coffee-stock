@@ -25,3 +25,18 @@ export function formatDate(date: string | Date): string {
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat("id-ID").format(value);
 }
+
+/** Draft nilai angka di form — string kosong saat user menghapus input */
+export type NumericDraft = number | "";
+
+/** Konversi string input number → draft ("" jika dikosongkan) */
+export function toNumericDraft(raw: string): NumericDraft {
+  if (raw.trim() === "") return "";
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : "";
+}
+
+/** Nilai tampilan controlled input number */
+export function numericDraftValue(value: NumericDraft): number | "" {
+  return value === "" ? "" : value;
+}

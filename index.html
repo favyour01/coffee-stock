@@ -9,7 +9,24 @@
     <meta name="description" content="Sistem inventaris dan pencatatan stok kedai kopi" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="display:flex;height:100vh;align-items:center;justify-content:center;font-family:system-ui,sans-serif;color:#333">
+        Memuat CoffeeStock...
+      </div>
+    </div>
+    <script>
+      // Hapus service worker lama (sisa deploy Next.js) yang bisa bikin blank putih
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (r) { r.unregister(); });
+        });
+      }
+      if ("caches" in window) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) { caches.delete(k); });
+        });
+      }
+    </script>
     <script type="module" src="/src/client/main.tsx"></script>
   </body>
 </html>

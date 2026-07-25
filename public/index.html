@@ -7,15 +7,32 @@
     <meta name="theme-color" content="#1a1a1a" />
     <title>CoffeeStock — Sistem Inventaris Kedai Kopi</title>
     <meta name="description" content="Sistem inventaris dan pencatatan stok kedai kopi" />
-    <script type="module" crossorigin src="/assets/index-C8KrfHry.js"></script>
+    <script type="module" crossorigin src="/assets/index-DQlYVSGo.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/react-CXaEv2ub.js">
     <link rel="modulepreload" crossorigin href="/assets/charts-0vI__y1z.js">
     <link rel="modulepreload" crossorigin href="/assets/pdf-X2_w8d-X.js">
     <link rel="modulepreload" crossorigin href="/assets/scanner-BGkU7TpZ.js">
     <link rel="modulepreload" crossorigin href="/assets/excel-3SA47z_C.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CyhVe30P.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-Dq-dpcQQ.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="display:flex;height:100vh;align-items:center;justify-content:center;font-family:system-ui,sans-serif;color:#333">
+        Memuat CoffeeStock...
+      </div>
+    </div>
+    <script>
+      // Hapus service worker lama (sisa deploy Next.js) yang bisa bikin blank putih
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (r) { r.unregister(); });
+        });
+      }
+      if ("caches" in window) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) { caches.delete(k); });
+        });
+      }
+    </script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { join } from "path";
-import { existsSync } from "fs";
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { authRoutes } from "./routes/auth";
 import { productRoutes } from "./routes/products";
 import { masterRoutes } from "./routes/master";
@@ -34,7 +34,15 @@ const app = new Elysia()
   .use(dataRoutes)
 
   // Health check
-  .get("/api/health", () => ({ status: "ok", timestamp: new Date().toISOString() }));
+  .get("/api/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
+  .get("/api/debug/frontend", () => {
+    const assetsDir = join(PUBLIC_DIR, "assets");
+    const assets = existsSync(assetsDir) ? readdirSync(assetsDir) : [];
+    const html = existsSync(INDEX_HTML) ? readFileSync(INDEX_HTML, "utf8") : "";
+    const refs = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]);
+    const missing = refs.filter((r) => !existsSync(join(PUBLIC_DIR, r.slice(1))));
+    return { publicDir: PUBLIC_DIR, indexExists: existsSync(INDEX_HTML), assetCount: assets.length, refs, missing };
+  });
 
 // Production: serve frontend dari public/
 if (isProd) {

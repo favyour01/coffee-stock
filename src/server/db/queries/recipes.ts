@@ -18,6 +18,30 @@ export const recipeQueries = {
   findAll: () =>
     query<RecipeRow>("SELECT * FROM recipes ORDER BY nama_menu"),
 
+  findAllWithItems: async () => {
+    const recipes = await query<RecipeRow>("SELECT * FROM recipes ORDER BY nama_menu");
+    if (!recipes.length) return [];
+
+    const items = await query<RecipeItemRow>(
+      `SELECT ri.*, p.nama_barang AS product_nama, p.satuan
+       FROM recipe_items ri
+       JOIN products p ON ri.product_id = p.id
+       ORDER BY p.nama_barang`
+    );
+
+    const byRecipe = new Map<string, RecipeItemRow[]>();
+    for (const item of items) {
+      const list = byRecipe.get(item.recipe_id) ?? [];
+      list.push(item);
+      byRecipe.set(item.recipe_id, list);
+    }
+
+    return recipes.map((recipe) => ({
+      ...recipe,
+      items: byRecipe.get(recipe.id) ?? [],
+    }));
+  },
+
   findById: (id: string) =>
     queryOne<RecipeRow>("SELECT * FROM recipes WHERE id = ?", [id]),
 
@@ -27,7 +51,8 @@ export const recipeQueries = {
     const items = await query<RecipeItemRow>(
       `SELECT ri.*, p.nama_barang AS product_nama, p.satuan
        FROM recipe_items ri JOIN products p ON ri.product_id = p.id
-       WHERE ri.recipe_id = ?`,
+       WHERE ri.recipe_id = ?
+       ORDER BY p.nama_barang`,
       [id]
     );
     return { ...recipe, items };

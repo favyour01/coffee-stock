@@ -8,7 +8,7 @@ export const recipeRoutes = new Elysia()
   .use(authMiddleware)
 
   // ─── Recipes ──────────────────────────────────────────────────────────────
-  .get("/api/recipes", () => recipeQueries.findAll())
+  .get("/api/recipes", () => recipeQueries.findAllWithItems())
 
   .get("/api/recipes/:id", async ({ params, set }) => {
     const recipe = await recipeQueries.findWithItems(params.id);
