@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,22 +11,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { recipeApi } from "@/lib/api";
 import { toast } from "sonner";
 import { formatCurrency, numericDraftValue, toNumericDraft, type NumericDraft } from "@/lib/utils";
@@ -53,7 +45,6 @@ export function ProduksiClient({
   const [hargaJual, setHargaJual] = useState<NumericDraft>(0);
   const [items, setItems] = useState<RecipeItemRow[]>([emptyItem()]);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const reset = () => {
     setEditing(null);
@@ -84,6 +75,10 @@ export function ProduksiClient({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!namaMenu.trim()) {
+      toast.error("Nama menu wajib diisi");
+      return;
+    }
     if (hargaJual === "") {
       toast.error("Harga jual wajib diisi");
       return;
@@ -110,8 +105,18 @@ export function ProduksiClient({
       return;
     }
 
+    const productIds = validItems.map((i) => i.product_id);
+    if (new Set(productIds).size !== productIds.length) {
+      toast.error("Bahan yang sama tidak boleh dipilih dua kali");
+      return;
+    }
+
     setLoading(true);
-    const data = { nama_menu: namaMenu, harga_jual: Number(hargaJual), items: validItems };
+    const data = {
+      nama_menu: namaMenu.trim(),
+      harga_jual: Number(hargaJual),
+      items: validItems,
+    };
     try {
       if (editing) await recipeApi.update(editing.id, data);
       else await recipeApi.create(data);
@@ -123,9 +128,84 @@ export function ProduksiClient({
     finally { setLoading(false); }
   };
 
-  const toggleExpand = (id: string) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  const columns = useMemo<DataTableColumn<Recipe>[]>(
+    () => [
+      {
+        id: "menu",
+        header: "Menu",
+        sortable: true,
+        sortValue: (r) => r.nama_menu,
+        cell: (r) => <span className="font-medium">{r.nama_menu}</span>,
+      },
+      {
+        id: "harga",
+        header: "Harga Jual",
+        sortable: true,
+        sortValue: (r) => Number(r.harga_jual),
+        cell: (r) => formatCurrency(Number(r.harga_jual)),
+      },
+      {
+        id: "bahan",
+        header: "Bahan",
+        sortable: true,
+        sortValue: (r) => recipeItems(r).length,
+        cell: (r) => {
+          const list = recipeItems(r);
+          if (list.length === 0) {
+            return <span className="text-muted-foreground">Belum ada bahan</span>;
+          }
+          return (
+            <div className="max-w-md space-y-0.5 text-sm">
+              {list.map((item) => (
+                <div key={item.id} className="text-muted-foreground">
+                  <span className="text-foreground">{item.product_nama ?? "-"}</span>
+                  {" · "}
+                  {item.qty} {item.satuan ?? ""}
+                </div>
+              ))}
+            </div>
+          );
+        },
+      },
+      {
+        id: "jumlah",
+        header: "Jml Bahan",
+        sortable: true,
+        sortValue: (r) => recipeItems(r).length,
+        cell: (r) => recipeItems(r).length,
+        headerClassName: "w-28",
+      },
+      {
+        id: "aksi",
+        header: "Aksi",
+        headerClassName: "w-28",
+        cell: (r) => (
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => handleEdit(r)}>
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={async () => {
+                if (!confirm("Hapus resep?")) return;
+                try {
+                  await recipeApi.delete(r.id);
+                  toast.success("Dihapus");
+                  qc.invalidateQueries({ queryKey: ["recipes"] });
+                } catch (err) {
+                  toast.error((err as Error).message);
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [qc]
+  );
 
   return (
     <div className="space-y-4">
@@ -206,80 +286,17 @@ export function ProduksiClient({
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {recipes.map((recipe) => {
-          const itemsList = recipeItems(recipe);
-          const isOpen = !!expanded[recipe.id];
-          return (
-            <Card key={recipe.id}>
-              <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
-                <div className="min-w-0 flex-1">
-                  <CardTitle className="text-base">{recipe.nama_menu}</CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {formatCurrency(recipe.harga_jual)} · {itemsList.length} bahan
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    type="button"
-                    aria-label={isOpen ? "Sembunyikan bahan" : "Tampilkan bahan"}
-                    onClick={() => toggleExpand(recipe.id)}
-                  >
-                    {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(recipe)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={async () => {
-                      if (!confirm("Hapus resep?")) return;
-                      try {
-                        await recipeApi.delete(recipe.id);
-                        toast.success("Dihapus");
-                        qc.invalidateQueries({ queryKey: ["recipes"] });
-                      } catch (err) {
-                        toast.error((err as Error).message);
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardHeader>
-              {isOpen && (
-                <CardContent>
-                  {itemsList.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Belum ada bahan pada resep ini.</p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Bahan</TableHead>
-                          <TableHead>Qty</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {itemsList.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell>{item.product_nama ?? "-"}</TableCell>
-                            <TableCell>
-                              {item.qty} {item.satuan ?? ""}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              )}
-            </Card>
-          );
-        })}
-      </div>
+      <DataTable
+        data={recipes}
+        columns={columns}
+        getRowKey={(r) => r.id}
+        searchPlaceholder="Cari nama menu atau bahan..."
+        searchFilter={(r, q) =>
+          r.nama_menu.toLowerCase().includes(q) ||
+          recipeItems(r).some((item) => (item.product_nama ?? "").toLowerCase().includes(q))
+        }
+        emptyMessage="Belum ada resep"
+      />
     </div>
   );
 }

@@ -84,6 +84,25 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
     });
   }, [products, filterKategori, filterStok]);
 
+  const handleEdit = (p: Product) => {
+    setEditing(p);
+    setForm({
+      kode_barang: p.kode_barang,
+      nama_barang: p.nama_barang,
+      kategori_id: p.kategori_id,
+      supplier_id: p.supplier_id,
+      satuan: p.satuan,
+      harga_beli: Number(p.harga_beli),
+      harga_jual: Number(p.harga_jual),
+      minimum_stok: Number(p.minimum_stok),
+    });
+    setOpen(true);
+  };
+
+  const handleGenerateQR = async (product: Product) => {
+    toast.info(`Kode: ${product.kode_barang} — QR tersedia setelah produk disimpan`);
+  };
+
   const columns = useMemo<DataTableColumn<Product>[]>(() => {
     const cols: DataTableColumn<Product>[] = [
       { id: "kode", header: "Kode", sortable: true, sortValue: (p) => p.kode_barang, cell: (p) => <span className="font-mono text-sm">{p.kode_barang}</span> },
@@ -147,25 +166,6 @@ export function BarangClient({ products, categories, suppliers, units }: BarangC
       resetForm();
     } catch (err) { toast.error((err as Error).message); }
     finally { setLoading(false); }
-  };
-
-  const handleEdit = (p: Product) => {
-    setEditing(p);
-    setForm({
-      kode_barang: p.kode_barang,
-      nama_barang: p.nama_barang,
-      kategori_id: p.kategori_id,
-      supplier_id: p.supplier_id,
-      satuan: p.satuan,
-      harga_beli: Number(p.harga_beli),
-      harga_jual: Number(p.harga_jual),
-      minimum_stok: Number(p.minimum_stok),
-    });
-    setOpen(true);
-  };
-
-  const handleGenerateQR = async (product: Product) => {
-    toast.info(`Kode: ${product.kode_barang} — QR tersedia setelah produk disimpan`);
   };
 
   return (

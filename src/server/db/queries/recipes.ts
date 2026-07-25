@@ -37,8 +37,18 @@ export const recipeQueries = {
     }
 
     return recipes.map((recipe) => ({
-      ...recipe,
-      items: byRecipe.get(recipe.id) ?? [],
+      id: recipe.id,
+      nama_menu: recipe.nama_menu,
+      harga_jual: Number(recipe.harga_jual),
+      created_at: recipe.created_at,
+      items: (byRecipe.get(recipe.id) ?? []).map((item) => ({
+        id: item.id,
+        recipe_id: item.recipe_id,
+        product_id: item.product_id,
+        qty: Number(item.qty),
+        product_nama: item.product_nama,
+        satuan: item.satuan,
+      })),
     }));
   },
 
